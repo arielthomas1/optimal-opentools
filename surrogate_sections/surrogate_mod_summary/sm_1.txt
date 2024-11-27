@@ -1,11 +1,11 @@
 Model parameter summary (m): 
- Shelf width = 120000.0 
+ Shelf width = 130000.0 
  Slope width = 20000 
- Shelf break depth = 150.0 
- Shelf gradient (deg)= 0.07 
+ Shelf break depth = 140.0 
+ Shelf gradient (deg)= 0.06 
  Inland length = 10000 
- Total Model length = 150000 
- Top Elevation = 10.0 
- Terrestrial sediment = 60.0  
- Coastal sediment = 1360.0
- Unconsol. ratio = 0.22058823529411764
+ Total Model length = 160000 
+ Top Elevation = 70.0 
+ Terrestrial sediment = 924  
+ Coastal sediment = 1400.0
+ Unconsol. ratio = 0.05714285714285714

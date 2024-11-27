@@ -265,12 +265,7 @@ while top_elev <1:
 
 #TODO - check and add skewness from real data
 
-# TERRESTRIAL SEDIMENT THICKNESS
-#retrieving random val based on the mean and std dev from the parameters table
-tst=np.round(norm.rvs(
-                loc=of.get_mean('tst',par_stats), 
-                scale=of.get_sdev('tst',par_stats),
-                random_state=rng.integers(10000)),-1)
+
 
 # COAST SEDIMENT THICKNESS
 #retrieving random val based on the mean and std dev from the parameters table
@@ -293,6 +288,15 @@ while cust < 0:
             loc=of.get_mean('cust', par_stats),
             scale=of.get_sdev('cust', par_stats),
             random_state=rng.integers(10000)),-1)
+
+# TERRESTRIAL SEDIMENT THICKNESS
+#retrieving random val based on the mean and std dev from the parameters table
+# tst=np.round(norm.rvs(
+#                 loc=of.get_mean('tst',par_stats), 
+#                 scale=of.get_sdev('tst',par_stats),
+#                 random_state=rng.integers(10000)),-1)
+
+tst=int(0.66*cst)
 #SHELF WIDTH
 #retrieving random val based on the mean and std dev from the parameters table
 sw=np.round(norm.rvs(
@@ -458,7 +462,7 @@ spacing = (sx, sy, sz)
 origin = (ox, oy, oz)
 
 
-#%%Creating interpolated Top and Base Surfaces 
+#%Creating interpolated Top and Base Surfaces 
 
 #Defining the aquifer geometries using a fixed value relative to model bounds
 
@@ -466,7 +470,7 @@ origin = (ox, oy, oz)
 # ob_thickness=random.randint(0,300)
 # aq1_thickness=random.randint(100,300)
 aq_len=sw
-ob_thickness=200
+ob_thickness=400
 aq1_thickness=400
 
 #Interpolating surface at model resolution
@@ -485,8 +489,15 @@ z_bhs=spline_top(x_bhs)
 z_unit_base=spline_base(x_bhs)
 #setting the the total depth of the boreholes equal to the model domain
 td_bhs=abs(spline_base(x_bhs)-z_bhs)
+
+#Defining top of aquifer based on thickness of overburden confining layer
 top_aq1=spline_top(x_bhs)-ob_thickness
 bot_aq1=spline_top(x_bhs)-(ob_thickness+aq1_thickness)
+
+#Defining overburden interval
+top_ob1=spline_top(x_bhs)
+bot_ob1=top_aq1
+bot_sed_column=spline_base(x_bhs)
 
 lbh_header = ['bh_ID', 'bh_x', 'bh_y', 'bh_z', 'bh_depth']
 fd_header=['bh_ID','facies_ID','top','bot']
@@ -499,31 +510,67 @@ df_ud=pd.DataFrame(columns=ud_header)
 borehole_names = [f"bh_{i}" for i in range(1, len(x_bhs) + 1)]
 #Fill boreholes
 df_lbh['bh_ID']=borehole_names
-df_lbh['bh_x']=np.round(x_bhs/100)
+df_lbh['bh_x']=np.round(x_bhs)
 df_lbh['bh_y']=(sy/2)*np.ones_like(x_bhs)
 df_lbh['bh_z']=np.floor(z_bhs)
 df_lbh['bh_depth']=np.floor(td_bhs)
 df_lbh.to_csv(r"{}\surrogate_boreholes\bh_{}.lbh".format(output_data,mod_id),index=False)
+print(df_lbh) #for QC
 #Fill Unit - U
 # Loop to populate the DataFrame
-for i, (bh_id, u_top, u_bot) in enumerate(zip(borehole_names, z_bhs, z_unit_base)):
-    df_ud.loc[i] = [bh_id, 'U', np.floor(u_top),np.floor(u_bot)]  # Add values row by row
 
+# Start index
+row_idx = 0
+#adding unit 1
+# for bh_id, u_top, u_bot in zip(borehole_names, z_bhs, z_unit_base):
+#     df_ud.loc[row_idx] = [bh_id, 'U', np.floor(u_top),np.floor(u_bot)]  # Add values row by row
+#     row_idx += 1
 
+# # adding aquifer unit
+# for bh_id, aq_top, aq_bot in zip(borehole_names, top_aq1, bot_aq1):
+#     df_ud.loc[row_idx] = [bh_id, 'aq1', np.floor(aq_top),np.floor(aq_bot)]
+#     row_idx += 1
+
+# Loop to populate the DataFrame
+for bh_id, sand_top, sand_bot in zip(borehole_names, top_aq1, bot_aq1):
+    df_ud.loc[row_idx] = [bh_id, 'aq1', np.floor(sand_top),np.floor(sand_bot)]  # Add values row by row
+    row_idx += 1
+    
+for bh_id, ob_top, ob_bot in zip(borehole_names, top_ob1, bot_ob1):
+    df_ud.loc[row_idx] = [bh_id, 'ob1', np.floor(ob_top),np.floor(ob_bot)]  # Add values row by row
+    row_idx += 1
+# This loop populates the df with the remaining sedimentary column interval from the base of the aquifer layer 
+# to the basal surface of the model domain.     
+for bh_id, sed_column_top, sed_column_bot in zip(borehole_names, bot_aq1, bot_sed_column):
+    df_ud.loc[row_idx] = [bh_id, 'sed_col', np.floor(sed_column_top),np.floor(sed_column_bot)]  # Add values row by row
+    row_idx += 1
+    
+#writing to df
 df_ud.to_csv(r"{}\surrogate_boreholes\bh_{}.ud".format(output_data,mod_id),index=False)
-df_ud
+print(df_ud) #for QC
 
 
 #Fill facies
+
+row_idx = 0
 # Loop to populate the DataFrame
-for i, (bh_id, f_top, f_bot) in enumerate(zip(borehole_names, top_aq1, bot_aq1)):
-    df_fd.loc[i] = [bh_id, 'sand', np.floor(f_top),np.floor(f_bot)]  # Add values row by row
+for bh_id, sand_top, sand_bot in zip(borehole_names, top_aq1, bot_aq1):
+    df_fd.loc[row_idx] = [bh_id, 'sand', np.floor(sand_top),np.floor(sand_bot)]  # Add values row by row
+    row_idx += 1
     
-df_fd
+for bh_id, ob_top, ob_bot in zip(borehole_names, top_ob1, bot_ob1):
+    df_fd.loc[row_idx] = [bh_id, 'clay', np.floor(ob_top),np.floor(ob_bot)]  # Add values row by row
+    row_idx += 1
+# This loop populates the df with the remaining sedimentary column interval from the base of the aquifer layer 
+# to the basal surface of the model domain.     
+for bh_id, sed_column_top, sed_column_bot in zip(borehole_names, bot_aq1, bot_sed_column):
+    df_fd.loc[row_idx] = [bh_id, 'silt', np.floor(sed_column_top),np.floor(sed_column_bot)]  # Add values row by row
+    row_idx += 1
+    
 df_fd.to_csv(r"{}\surrogate_boreholes\bh_{}.fd".format(output_data,mod_id),index=False)
+print(df_fd) #for QC
 
-
-#%%
+#%
 #
 # Plotting for QC
 fig, ax = plt.subplots()
@@ -552,110 +599,189 @@ plt.show()
 fig.savefig('{}/figures/{}_geometry.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 #%%
 #3D Quick Viewwer
-# #A vector to add a dimension to the 2D model
-# y_vect=np.linspace(0,5,5)
-# X_grid,Y_grid=np.meshgrid(x_new,y_vect)
-# top_surf=np.array([z_top_new])
-# bot_surf=np.array([z_base_new])
-# # Plot the top and bottom surfaces
-# fig = plt.figure(figsize=(10, 6))
+#A vector to add a dimension to the 2D model
+y_vect=np.linspace(0,5,5)
+X_grid,Y_grid=np.meshgrid(x_new,y_vect)
+top_surf=np.array([z_top_new])
+bot_surf=np.array([z_base_new])
+# Plot the top and bottom surfaces
+fig = plt.figure(figsize=(10, 6))
 
-# # Create a 3D axis
-# ax = fig.add_subplot(111, projection='3d')
-# # Plot the top surface
-# ax.plot_surface(X_grid, Y_grid, top_surf , cmap='viridis', alpha=0.8, edgecolor='black', label="Top Surface")
+# Create a 3D axis
+ax = fig.add_subplot(111, projection='3d')
+# Plot the top surface
+ax.plot_surface(X_grid, Y_grid, top_surf , cmap='viridis', alpha=0.8, edgecolor='black', label="Top Surface")
 
-# # Plot the bottom surface
-# ax.plot_surface(X_grid, Y_grid, bot_surf, cmap='plasma', alpha=0.8, edgecolor='red', label="Bottom Surface")
+# Plot the bottom surface
+ax.plot_surface(X_grid, Y_grid, bot_surf, cmap='plasma', alpha=0.8, edgecolor='red', label="Bottom Surface")
 
-# # Set axis labels
-# ax.set_xlabel('X Coordinate')
-# ax.set_ylabel('Y Coordinate')
-# ax.set_zlabel('Elevation')
+# Set axis labels
+ax.set_xlabel('X Coordinate')
+ax.set_ylabel('Y Coordinate')
+ax.set_zlabel('Elevation')
 
-# # Add a title
-# ax.set_title('Top and Bottom Surfaces')
+# Add a title
+ax.set_title('Top and Bottom Surfaces')
+ax.set_box_aspect([3, 1, 1]) 
+# Show the plot
+plt.show()
 
-# # Show the plot
-# plt.show()
 
-
-#
+#%%
 # Creating top and base model arrays for input into model
 top_surf=np.array([z_top_new])
 bot_surf=np.array([z_base_new])
 #adding grid
 sm_1.add_grid(dimensions, spacing, origin, top=top_surf, bot=bot_surf) 
 
-#Stratigraphic Pile
-strat_pile=ap.base.Pile('Strat')
-sm_1.set_Pile_master(strat_pile)
-covmodel_er = gcm.CovModel2D(elem=[('spherical', {'w':2, 'r':[100,100]})])
 
-#defining top and base surface objects
+### COVARIANCE MODELS ####
+#Covariance model for top surface
+covmodel_er = gcm.CovModel2D(elem=[('spherical', {'w':5, 'r':[1000,100]})])
+#COvariance model for sedimentary unit
+covmod_U=gcm.CovModel3D(elem=[('spherical', {'w':2, 'r':[5000,100,100]})],beta=slope_angle)
+
+### SURFACES ####
+
+#defining top model surface objects
 top=ap.base.Surface(name='top_mod',
-                     dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'kriging'},
-                     contact='erode')
+                     dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
+                     contact='onlap')
 
-#base=ap.base.Surface(name='base_mod',
- #                     dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'kriging'},
-  #                    contact='onlap')
 
-#Unit 1 - sedimentary unit
+#defining top aquifer 1 base surface object
+top_aq1=ap.base.Surface(name='top_aq1',
+                     dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
+                     contact='onlap')
+
+bot_aq1=ap.base.Surface(name='bot_aq1',
+                     dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
+                     contact='onlap')
+#### UNITS AND FACIES #####
+
+#defining overburden
+ob_facies={'f_method':'homogenous','f_covmodel':None}
+ob1=ap.base.Unit(name='ob1',
+                 order=1,
+                 color='brown',
+                 surface=top,
+                 dic_facies=ob_facies)
+
+#defining aquifer unit
+aq_facies={'f_method':'homogenous','f_covmodel':None}
+aq1=ap.base.Unit(name='aq1',
+                 order=2,
+                 color='yellow',
+                 surface=top_aq1,
+                 dic_facies=aq_facies)
+
+#defining underlying unit
+sed_col_facies={'f_method':'homogenous','f_covmodel':None}
+sed_col=ap.base.Unit(name='sed_col',
+                 order=3,
+                 color='darkorange',
+                 surface=bot_aq1,
+                 dic_facies=sed_col_facies)
+#defining subpile
+seq_strat=ap.base.Pile(name='sequence_strat')
+#Adding the aquifer unit to the subpile
+seq_strat.add_unit([sed_col,aq1,ob1])
+#Unit 1 -  unit representing the total sedimentary column of the shelf
 #NO covmodel defined at this stage because the model domain is being expicitly defined as homogeneous.
-covmod_U=gcm.CovModel3D(elem=[('spherical', {'w':2, 'r':[5000,100,100]})],beta=2*slope_angle)
-U_facies={'f_method':'SIS','f_covmodel':covmod_U}
-U=ap.base.Unit(name= 'sed_lyr',
+
+# U_facies={'f_method':'SIS','f_covmodel':covmod_U}
+# U=ap.base.Unit(name= 'sed_lyr',
+#                 order=1,
+#                 color='brown',
+#                 surface=top,
+#                 dic_facies=U_facies)   
+
+
+U_facies={'f_method':'SubPile', 'SubPile':seq_strat}
+U=ap.base.Unit(name= 'shelf_lyr',
                 order=1,
                 color='brown',
                 surface=top,
+                ID=4,
                 dic_facies=U_facies)
-#L=ap.base.Unit(name='base_lyr',
- #               order=2,
-  #              color='grey',
-   #             surface=base)
-   
 #TODO Add subpiles to include the aquifer interval as an explicit unit in the model
+# Sub unit 1- Aquifer unit embedded in shelf
 
 
-
-#pile = StratPile(f'strat_{mod_id}')      
-#Adding unit to the strat pile
+#Stratigraphic Pile
+strat_pile=ap.base.Pile(name='Strat')
 strat_pile.add_unit([U])
+sm_1.set_Pile_master(strat_pile)
+
+
 #ADDING SURFACES TO THE STRAT PILE
 
 
 #Adding Facies
-sand=ap.base.Facies(ID=1, name='Sand', color='yellow')
+sand=ap.base.Facies(ID=1, name='sand', color='yellow')
 silt= ap.base.Facies(ID=2, name='silt',color='darkorange')
 clay=ap.base.Facies(ID=3, name='clay',color='brown')
 gravel=ap.base.Facies(ID=4, name='gravel',color='palegreen')
 rock=ap.base.Facies(ID=5, name='rock', color='darkgray' )
 
-
-U.add_facies([silt])
-U.add_facies([sand])
+aq1.add_facies([sand])
+ob1.add_facies([clay])
+sed_col.add_facies([silt])
+U.add_facies([sand,silt,clay])
+#U.add_facies([sand])
 
 #Adding properties
 '''Porosity typically exhibits a gaussian normal distribution so this type
 of model will be assigned.'''
 
-cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[1000,10,50]})],
+cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[5000,100,100]})],
                              alpha=0,beta=slope_angle,gamma=0)
 
-mean_vals=[0.35,0.5]
+cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[5000,100,100]})],
+                             alpha=0,beta=slope_angle,gamma=0)
+cov_mod_k_clay=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[10000,100,100]})],
+                             alpha=0,beta=slope_angle,gamma=0)
+mean_vals_por_non_aq=[0.5,0.6]
+mean_vals_k=[10,1]
 list_facies=[sand,silt]
+list_facies_all=[sand,silt,clay]
+list_facies_non_aq=[silt,clay]
 
-por=ap.base.Prop("Por",facies=list_facies,
-                 covmodels=[cov_mod_por],
-                 means=mean_vals,
+por=ap.base.Prop(name="Por",facies=list_facies_non_aq,
+                 covmodels=[cov_mod_por,cov_mod_por],
+                 means=mean_vals_por_non_aq,
                  int_method="sgs",
-                 vmin=0.10,
+                 vmin=0.40,
                  vmax=0.65)
+
+por_sand=ap.base.Prop(name="Por_sand",facies=[sand],
+                 covmodels=[cov_mod_por],
+                 means=0.35,
+                 int_method="sgs",
+                 vmin=0.20,
+                 vmax=0.40)
+
+hyd_con=ap.base.Prop(name='K',facies=list_facies,
+                     covmodels=[cov_mod_k,cov_mod_k],
+                     means=mean_vals_k,
+                     int_method='sgs',
+                     vmin=0.5,
+                     vmax=12)
+
+hyd_con_clay=ap.base.Prop(name='K_clay',facies=[clay],
+                     covmodels=[cov_mod_k_clay],
+                     means=0.01,
+                     int_method='sgs',
+                     vmin=0.001,
+                     vmax=0.1)
 
 #Adding porosity to model object'
 sm_1.add_prop(por)
-#%%
+sm_1.add_prop(por_sand)
+sm_1.add_prop(hyd_con)
+sm_1.add_prop(hyd_con_clay)
+
+#%
 #Reading  borehole files
 bh_path=pd.read_csv(os.path.join(bh_folder,'bh_{}.lbh'.format(mod_id)))
 units_path=pd.read_csv(os.path.join(bh_folder,'bh_{}.ud'.format(mod_id)))
@@ -670,22 +796,22 @@ db,l_bhs=ap.inputs.load_bh_files(list_bhs=bh_path,
 db
 #%%
 #Extracting boreholes
-boreholes=ap.inputs.extract_bhs(df=db, list_bhs=l_bhs,ArchTable=sm_1)
+boreholes=ap.inputs.extract_bhs(df=db, list_bhs=l_bhs,ArchTable=sm_1,vb=1)
 sm_1.add_bh(boreholes)
 #%% Compute model
 sm_1.process_bhs()
-#%%
+#
 sm_1.compute_surf(1)
-#%%
+#
 sm_1.compute_facies(1)
-#%%
-#sm_1.compute_prop(1)
-#%% get results
+#
+sm_1.compute_prop(1)
+# #%% View results
 
 vex=15
 
-pg=pv.Plotter()
-sm_1.plot_grid(v_ex=vex)
+# pg=pv.Plotter()
+# sm_1.plot_grid(v_ex=vex)
 #%%
 
 sm_1.plot_units(iu=0,v_ex=vex)
@@ -695,4 +821,10 @@ sm_1.plot_facies(iu=0,ifa=0,v_ex=vex)
 #%%
 sm_1.plot_prop(por.name,v_ex=vex)
 #%%
-sm_1.plot_bhs()
+sm_1.plot_prop(hyd_con.name,v_ex=vex)
+
+#%%
+sm_1.plot_bhs(log='strati',
+              v_ex=vex,
+              plot_top=True,
+              plot_bot=True)
