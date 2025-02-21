@@ -759,7 +759,7 @@ for i in range(1, num_models + 1):
     ap.inputs.save_project(mod_dict[mod_id])
     
 #%% Computing compacted Porosity field
-mod_id='sm_5'
+mod_id='sm_10'
 por_facies1=mod_dict[mod_id].get_prop('Por')
 #get the 2D porosity array out of the default 5D array returned bz get_prop function.
 por_facies1=por_facies1[0,0,0,:,0,:]
@@ -785,7 +785,7 @@ comp_facies1[mask]=of.expo_trend(-z_array[mask],por_facies1[mask],comp_coeff)
 vmin = 0.1
 vmax = 0.65
 # Create subplots
-fig, axes = plt.subplots(2, 1, figsize=(8, 5), sharex=True, sharey=True)
+fig, axes = plt.subplots(2, 1, figsize=(6, 5), sharex=True, sharey=True)
 
 # Plot Porosity Field
 im1 = axes[0].imshow(np.flipud(por_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
@@ -801,8 +801,10 @@ axes[1].set_xlabel("k")
 # Add a shared colorbar
 cbar = fig.colorbar(im1, ax=axes, orientation="vertical", fraction=0.02, pad=0.02)
 cbar.set_label("Porosity")
-# pg=pv.Plotter()
-# sm_1.plot_grid(v_ex=vex)
+
+
+#Saving Figure
+
 #%%
 vex=15
 
@@ -837,52 +839,29 @@ fig, axes = plt.subplots(2, 2, figsize=(15, 10), sharex=True, sharey=True)
 im0 = axes[0,0].imshow(np.flipud(strati), cmap="viridis", aspect="auto", origin="upper")
 axes[0,0].set_title("Stratigraphy")
 
-# Plot Porosity Field
+# Plot Hyd Conductivity
 im1 = axes[0,1].imshow(np.flipud(flow_par), cmap="hot", aspect="auto", origin="upper")
 axes[0,1].set_title("Hydraulic Conductivity")
 
 
-axes[1,0].set_ylabel("i")
+axes[1,0].set_ylabel("layer")
 im2 = axes[1,0].imshow(np.flipud(por_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
 axes[1,0].set_title("Original Porosity Field")
 
-axes[1,0].set_ylabel("i")
+axes[1,0].set_ylabel("layer")
 
 # Plot Compacted Porosity Field
 im3 = axes[1,1].imshow(np.flipud(comp_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
 axes[1,1].set_title("Compacted Porosity Field")
-axes[1,1].set_xlabel("k")
+axes[1,1].set_xlabel("column")
 
 # Add a shared colorbar
-cbar = fig.colorbar(im2, ax=axes, orientation="vertical", fraction=0.02, pad=0.02)
-cbar.set_label("Porosity")
+cbar = fig.colorbar(im2, ax=axes[1,1], orientation="vertical", fraction=0.05, pad=0.02)
+cbar.set_label("Porosity (-)")
 
+cbar = fig.colorbar(im1, ax=axes[0,1], orientation="vertical", fraction=0.05, pad=0.02)
+cbar.set_label("Hydraulic Conductivity (m/day)")
 
-#%%
-#3D Quick Viewwer
-#A vector to add a dimension to the 2D model
-y_vect=np.linspace(0,5,5)
-X_grid,Y_grid=np.meshgrid(x_new,y_vect)
-top_surf=np.array([z_top_new])
-bot_surf=np.array([z_base_new])
-# Plot the top and bottom surfaces
-fig = plt.figure(figsize=(10, 6))
+#Saving Figure
+fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 
-# Create a 3D axis
-ax = fig.add_subplot(111, projection='3d')
-# Plot the top surface
-ax.plot_surface(X_grid, Y_grid, top_surf , cmap='viridis', alpha=0.8, edgecolor='black', label="Top Surface")
-
-# Plot the bottom surface
-ax.plot_surface(X_grid, Y_grid, bot_surf, cmap='plasma', alpha=0.8, edgecolor='red', label="Bottom Surface")
-
-# Set axis labels
-ax.set_xlabel('X Coordinate')
-ax.set_ylabel('Y Coordinate')
-ax.set_zlabel('Elevation')
-
-# Add a title
-ax.set_title('Top and Bottom Surfaces')
-ax.set_box_aspect([3, 1, 1]) 
-# Show the plot
-plt.show()

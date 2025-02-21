@@ -298,19 +298,20 @@ def apply_porosity_compaction(mod_dict, mod_id, comp_coeff):
     por_facies1 = mod_dict[mod_id].get_prop('Por')
     
     # Convert to 2D array (extract relevant slice from 5D array)
-    por_facies1 = por_facies1[0, 0, 0, :, 0, :]
+    por_facies1 = por_facies1[0, 0, 0, :, :, :]
 
     # Initialize compacted porosity array with the original values
     comp_facies1 = np.copy(por_facies1)
 
     # Get depth values and expand into 2D array
-    z_vals = mod_dict[mod_id].get_zgc()[:, np.newaxis]  # Convert 1D to 2D
-    z_array = np.tile(z_vals, (1, por_facies1.shape[1]))  # Repeat along columns
+    z_vals = mod_dict[mod_id].get_zgc()
+    z_vals_3D = np.reshape(z_vals,(por_facies1.shape[0], 1,1))# Convert 1D to 3D
+    z_array = np.broadcast_to(z_vals_3D, (por_facies1.shape[0], por_facies1.shape[1],por_facies1.shape[2]))  # Repeat along columns
 
     # Boolean mask for negative depth values
-    mask = z_array < 0
+    #mask = z_array < 0
 
     # Apply compaction function only for negative depth values
-    comp_facies1[mask] = expo_trend(-z_array[mask], por_facies1[mask], comp_coeff)
+    comp_facies1 = expo_trend(-z_array, por_facies1, comp_coeff)
 
     return comp_facies1

@@ -40,7 +40,7 @@ Units:
       dip: 0
       f_covmodel:
         alpha: 0.0
-        beta: 0.07
+        beta: 0.04
         elem:
         - !!python/tuple
           - spherical
@@ -48,7 +48,7 @@ Units:
             - 8000.0
             - 100.0
             - 100.0
-            w: 0.07
+            w: 0.04
         gamma: 0.0
       f_method: SIS
       neig: 10
@@ -115,7 +115,7 @@ Units:
       dip: 0
       f_covmodel:
       - alpha: 0.0
-        beta: 0.07
+        beta: 0.04
         elem:
         - !!python/tuple
           - spherical
@@ -123,10 +123,10 @@ Units:
             - 8000.0
             - 100.0
             - 100.0
-            w: 0.07
+            w: 0.04
         gamma: 0.0
       - alpha: 0.0
-        beta: 0.07
+        beta: 0.04
         elem:
         - !!python/tuple
           - spherical
@@ -134,10 +134,10 @@ Units:
             - 8000.0
             - 100.0
             - 100.0
-            w: 0.07
+            w: 0.04
         gamma: 0.0
       - alpha: 0.0
-        beta: 0.07
+        beta: 0.04
         elem:
         - !!python/tuple
           - spherical
@@ -145,7 +145,7 @@ Units:
             - 10000.0
             - 100.0
             - 100.0
-            w: 0.07
+            w: 0.04
         gamma: 0.0
       f_method: SIS
       neig: 10
@@ -218,14 +218,14 @@ facies_computed: 1
 grid:
   bot: sm_7.bot
   dimensions: !!python/tuple
-  - 1500
+  - 1800
   - 1
-  - 315
+  - 190
   mask: sm_7.msk
   origin: !!python/tuple
   - 0.0
   - 0.0
-  - -3110.0
+  - -1860.0
   rotation_angle: 0
   spacing: !!python/tuple
   - 100.0
@@ -258,7 +258,7 @@ properties:
         - -1
         - 0
       - !!binary |
-        7FG4HoXrsT8=
+        exSuR+F6pD8=
       elem:
       - !!python/tuple
         - gaussian
@@ -266,10 +266,10 @@ properties:
           - 5000.0
           - 100.0
           - 100.0
-          w: 0.07
+          w: 0.04
       gamma: 0
     - alpha: 0.0
-      beta: 0.07
+      beta: 0.04
       elem:
       - !!python/tuple
         - gaussian
@@ -277,10 +277,10 @@ properties:
           - 5000.0
           - 100.0
           - 100.0
-          w: 0.07
+          w: 0.04
       gamma: 0.0
     - alpha: 0.0
-      beta: 0.07
+      beta: 0.04
       elem:
       - !!python/tuple
         - gaussian
@@ -288,7 +288,7 @@ properties:
           - 10000.0
           - 100.0
           - 100.0
-          w: 0.07
+          w: 0.04
       gamma: 0.0
     def_mean: 1
     facies:
@@ -312,7 +312,7 @@ properties:
       beta: !!python/object/apply:numpy.core.multiarray.scalar
       - *id001
       - !!binary |
-        7FG4HoXrsT8=
+        exSuR+F6pD8=
       elem:
       - !!python/tuple
         - gaussian
@@ -320,10 +320,10 @@ properties:
           - 5000.0
           - 100.0
           - 100.0
-          w: 0.07
+          w: 0.04
       gamma: 0
     - alpha: 0.0
-      beta: 0.07
+      beta: 0.04
       elem:
       - !!python/tuple
         - gaussian
@@ -331,13 +331,13 @@ properties:
           - 5000.0
           - 100.0
           - 100.0
-          w: 0.07
+          w: 0.04
       gamma: 0.0
     - alpha: 0
       beta: !!python/object/apply:numpy.core.multiarray.scalar
       - *id001
       - !!binary |
-        7FG4HoXrsT8=
+        exSuR+F6pD8=
       elem:
       - !!python/tuple
         - gaussian
@@ -345,7 +345,7 @@ properties:
           - 10000.0
           - 100.0
           - 100.0
-          w: 0.07
+          w: 0.04
       gamma: 0
     def_mean: 1
     facies:
