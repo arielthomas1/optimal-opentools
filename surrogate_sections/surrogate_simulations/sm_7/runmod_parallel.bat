@@ -1,1 +1,0 @@
-"C:\Program Files (x86)\MPICH2\bin\mpiexec.exe" -localonly 1 "C:\Users\Ariel\sciebo\SEAWAT\swt_v4_00_05\exe\swt_v4x64.exe" "H:/My Drive/OPTIMAL/Project work/optimal/surrogate_sections/surrogate_simulations\sm_7\sm_7.nam_swt"

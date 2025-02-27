@@ -35,7 +35,8 @@ import flopy as fp
 mod_fol=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\ArchPy_mods" # text files containing all the model parameters
 mod_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\surrogate_mod_summary" # text files containing all the model parameters
 output_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections" # main folder with all output data including figures
-modflow_ws="H:/My Drive/OPTIMAL/Project work/optimal/surrogate_sections/surrogate_simulations"
+#modflow_ws="H:/My Drive/OPTIMAL/Project work/optimal/surrogate_sections/surrogate_simulations"
+modflow_ws=r"C:\Users\Ariel\sciebo\OPTIMAL_LOCAL"
 imod_path=r"C:\Users\Ariel\sciebo\imod_files\iMODexe\iMOD-WQ_V5_3_SVN359_X64R.exe"
 imod6_path=r"C:\Users\Ariel\sciebo\imod_files\iMODexe\MODFLOW6_v6.2.1.exe"
 seawat_exe=r"C:\Users\Ariel\sciebo\SEAWAT\swt_v4_00_05\exe\swt_v4x64.exe"
@@ -329,7 +330,7 @@ nprmas = 10
 nprobs = 10
 timprs_lst = [perlen[0]]
 btn = fp.mt3d.Mt3dBtn(swt, nprs=nprs, timprs=timprs_lst, prsity=porosity, sconc=sconc_arr,
-                         ifmtcn=ifmtcn, chkmas=chkmas, nprobs=nprobs, nprmas=nprmas, dt0=0)
+                         ifmtcn=ifmtcn, chkmas=chkmas, nprobs=nprobs, nprmas=nprmas, dt0=500)
 #%% ADV Package
 #   write the ADV package
 adv = fp.mt3d.Mt3dAdv(swt, mixelm=0, mxpart=2000000)
@@ -351,7 +352,11 @@ denseslp = 0.7143
 firstdt = 0.001
 vdf = fp.seawat.SeawatVdf(swt, iwtable=iwtable, densemin=densemin, densemax=densemax,
                              denseref=denseref, denseslp=denseslp, firstdt=firstdt)
-
+#%% SSM Package
+#   write the SSM package
+ssm_rch_in = np.copy(rch_arr) * 0.0
+ssm_rch_all=np.broadcast_to(ssm_rch_in,(nper,1800))
+ssm = fp.mt3d.Mt3dSsm(swt, crch=ssm_rch_in, stress_period_data=ssm_arr_in)
 
 #%% Write simulation
 #   write packages and run model
@@ -365,8 +370,8 @@ with open(os.path.join(model_dir, 'LOAD.ASC'), 'wb') as f:
 
 #   create the pksf and pkst files - change it in case the grid discretization changes
 pksf_lines = ['ISOLVER 1', 'NPC 2', 'MXITER 200', 'RELAX .98', 'HCLOSEPKS 0.0001', 'RCLOSEPKS 10000.0', 'PARTOPT 0',
-              'PARTDATA', 'external 40 1. (free) -1', 'GNCOL {}'.format(ncol), 'GNROW {}'.format(nrow), 'GDELR', '100', 'GDELC', '100',
-              'NOVLAPADV 2', 'END']
+              'PARTDATA', 'external 40 1. (free) -1', 'GNCOL {}'.format(ncol), 'GNROW {}'.format(nrow), 
+              'GDELR', '100', 'GDELC', '100','NOVLAPADV 2', 'END']
 pkst_lines = ['ISOLVER 2', 'NPC 2', 'MXITER 1000', 'INNERIT 50', 'RELAX .98', 'RCLOSEPKS 1.0E-05',
               'HCLOSEPKS 1.0E+12', 'RELATIVE-L2NORM', 'END']
 # 'CCLOSEPKS=0.00001'
@@ -408,7 +413,7 @@ mod_file=os.path.join(model_dir, mod_id + '.nam_swt')
 #####WINDOWS##########################
 #    #Writing the windows batch script
 with open('runmod_parallel.bat','w') as infile:
-    infile.write("\"{}\" -localonly 1 \"{}\" \"{}\"".format(mpich_exe,seawat_exe,mod_file))
+    infile.write("\"{}\" -localonly 4 \"{}\" \"{}\"".format(mpich_exe,imod_path,mod_file))
 infile.close()    
 
 #subprocess.call([r'runmod_parallel.bat'])
