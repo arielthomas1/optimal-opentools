@@ -1,1 +1,1 @@
-"C:\Program Files (x86)\MPICH2\bin\mpiexec.exe" -localonly 4 "C:\Users\Ariel\sciebo\imod_files\iMODexe\iMOD-WQ_V5_3_SVN359_X64R.exe" "C:\Users\Ariel\sciebo\OPTIMAL_LOCAL\sm_7\sm_7.nam_swt"
+"/opt/intel/oneapi/mpi/2021.11/bin/mpiexec.exe" -localonly 4 "/home/ariel2/software/bin/seawat_svn387" "/home/ariel2/Projects/optimal_mod_runs/sm_7/sm_7.nam_swt"

@@ -1,0 +1,7 @@
+bh_ID,facies_ID,top,bot
+a,silt,2.0,-65.3 
+a,rock,-65.3,-316.0 
+b,silt,-5,-102.0 
+b,rock,-102.0,-316.0 
+c,silt,-15.0,-204.0 
+c,rock,-204.0,-316.0 

@@ -5,7 +5,8 @@ Created on Mon Feb 17 15:57:10 2025
 @author: Ariel
 """
 import os
-work_dir=r"H:\My Drive\OPTIMAL\Project work\optimal"
+#work_dir=r"H:\My Drive\OPTIMAL\Project work\optimal"
+work_dir='/home/ariel2/Projects/optimal'
 os.chdir(work_dir)
 import numpy as np
 import pandas as pd
@@ -31,16 +32,29 @@ import ArchPy.ap_mf
 from ArchPy.ap_mf import archpy2modflow, array2cellids
 import flopy as fp
 
-#Definig model data folder i.e. where ArchPy surrogate models are stroed
-mod_fol=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\ArchPy_mods" # text files containing all the model parameters
-mod_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\surrogate_mod_summary" # text files containing all the model parameters
-output_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections" # main folder with all output data including figures
+# #Definig model data folder i.e. where ArchPy surrogate models are stroed
+# mod_fol=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\ArchPy_mods" # text files containing all the model parameters
+# mod_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\surrogate_mod_summary" # text files containing all the model parameters
+# output_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections" # main folder with all output data including figures
 #modflow_ws="H:/My Drive/OPTIMAL/Project work/optimal/surrogate_sections/surrogate_simulations"
-modflow_ws=r"C:\Users\Ariel\sciebo\OPTIMAL_LOCAL"
-imod_path=r"C:\Users\Ariel\sciebo\imod_files\iMODexe\iMOD-WQ_V5_3_SVN359_X64R.exe"
-imod6_path=r"C:\Users\Ariel\sciebo\imod_files\iMODexe\MODFLOW6_v6.2.1.exe"
-seawat_exe=r"C:\Users\Ariel\sciebo\SEAWAT\swt_v4_00_05\exe\swt_v4x64.exe"
-mpich_exe=r"C:\Program Files (x86)\MPICH2\bin\mpiexec.exe"
+# modflow_ws=r"C:\Users\Ariel\sciebo\OPTIMAL_LOCAL"
+# imod_path=r"C:\Users\Ariel\sciebo\imod_files\iMODexe\iMOD-WQ_V5_3_SVN359_X64R.exe"
+# imod6_path=r"C:\Users\Ariel\sciebo\imod_files\iMODexe\MODFLOW6_v6.2.1.exe"
+# seawat_exe=r"C:\Users\Ariel\sciebo\SEAWAT\swt_v4_00_05\exe\swt_v4x64.exe"
+# mpich_exe=r"C:\Program Files (x86)\MPICH2\bin\mpiexec.exe"
+
+#Linux setup
+
+mod_fol='/home/ariel2/Projects/optimal/surrogate_sections/ArchPy_mods'
+mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
+output_data='/home/ariel2/Projects/optimal/surrogate_sections'
+
+modflow_ws='/home/ariel2/Projects/optimal_mod_runs'
+imod_path='/home/ariel2/software/bin/seawat_svn387'
+#imod6_path=
+seawat_exe='/home/ariel2/software/swtv4'
+mpich_exe='/opt/intel/oneapi/mpi/2021.11/bin/mpiexec.exe'
+
 #%%
 
 #user-defined number of models to be retrieved
@@ -87,7 +101,7 @@ axes[1,0].set_ylabel("layer")
 # Plot Compacted Porosity Field
 im3 = axes[1,1].imshow(np.flipud(comp_facies1[:,0,:]), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
 axes[1,1].set_title("Compacted Porosity Field")
-axes[1,1].set_xlabel("column")
+axes[1,1].set_xlabel("Model column")
 
 # Add a shared colorbar
 cbar = fig.colorbar(im2, ax=axes[1,1], orientation="vertical", fraction=0.05, pad=0.02)
@@ -103,7 +117,8 @@ fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=450, bbo
 
 #%%
 
-df_sl=pd.read_csv("H:/My Drive/OPTIMAL/Project work/Global_datasets/Sealevel_data_Imbrie_200k.csv")
+#df_sl=pd.read_csv("H:/My Drive/OPTIMAL/Project work/Global_datasets/Sealevel_data_Imbrie_200k.csv")
+df_sl=pd.read_csv('/home/ariel2/global_datasets/Sealevel_data_Imbrie_200k.csv')
 h = -15
 lvl=h*np.ones([len(df_sl['Age [ka]'].values),1])
 
@@ -120,6 +135,8 @@ plt.title('Chengsi model relative sea level',fontsize='16')
 plt.ylabel('Relative sea level (m)',fontsize='16')
 ax.set_xlim(0,200)
 plt.legend()
+
+
 
 #%% Preparing sealevel data NB. Comment out, this only needed to be done once
 
@@ -174,7 +191,7 @@ sp_sealevel=[ -27.3,  -35.9,  -83.2,  -65.3,  -87.3, -108.7, -101.3,  -77.2,
          -3.3,  -47.2,  -33.6,  -48.4,  -33. ,  -68.6,  -82.3,  -76.9,
         -87.3,  -90.6, -115. ,  -49. ,    0. ]
 # 1D array of stress period duraction: 10ka
-sp_time = 10000*np.ones_like(sp_sealevel)
+sp_time = 9999*np.ones_like(sp_sealevel)
 
 # model name and folder structure
 model_dir = os.path.join(modflow_ws, mod_id)
@@ -192,7 +209,7 @@ head_arr = ibound_sm*0
 #%% DIS package
 
 perlen = (365.25*9999)*np.ones_like(sp_sealevel) #an array filled with values of the length of each stress period in days.
-nstp = 20*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
+nstp = 200*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
 nper = len(sp_sealevel) # number of stress periods
 
 dis = fp.modflow.ModflowDis(swt, nlay, nrow, ncol, nper = nper, delr = delr, delc = delc, top = top_elev,
@@ -322,15 +339,16 @@ oc = fp.modflow.ModflowOc(swt, ihedfm=ihedfm, stress_period_data=spd, unitnumber
 
 #   the BTN package
 porosity = por_arr
-dt0 = 365.25
+dt0 = 0
 nprs = 1
 ifmtcn = 0
 chkmas = False
 nprmas = 10
 nprobs = 10
-timprs_lst = [perlen[0]]
+total_sim_time=sum(perlen)
+timprs_lst = list(np.linspace(1,total_sim_time,nper,endpoint=True,dtype=int))
 btn = fp.mt3d.Mt3dBtn(swt, nprs=nprs, timprs=timprs_lst, prsity=porosity, sconc=sconc_arr,
-                         ifmtcn=ifmtcn, chkmas=chkmas, nprobs=nprobs, nprmas=nprmas, dt0=500)
+                         ifmtcn=ifmtcn, chkmas=chkmas, nprobs=nprobs, nprmas=nprmas, dt0=0)
 #%% ADV Package
 #   write the ADV package
 adv = fp.mt3d.Mt3dAdv(swt, mixelm=0, mxpart=2000000)
@@ -369,10 +387,10 @@ with open(os.path.join(model_dir, 'LOAD.ASC'), 'wb') as f:
     f.write(ibound_arr_sum)
 
 #   create the pksf and pkst files - change it in case the grid discretization changes
-pksf_lines = ['ISOLVER 1', 'NPC 2', 'MXITER 200', 'RELAX .98', 'HCLOSEPKS 0.0001', 'RCLOSEPKS 10000.0', 'PARTOPT 0',
+pksf_lines = ['ISOLVER 1', 'NPC 2', 'MXITER 200', 'RELAX .98', 'HCLOSEPKS 0.001', 'RCLOSEPKS 10000.0', 'PARTOPT 0',
               'PARTDATA', 'external 40 1. (free) -1', 'GNCOL {}'.format(ncol), 'GNROW {}'.format(nrow), 
-              'GDELR', '100', 'GDELC', '100','NOVLAPADV 2', 'END']
-pkst_lines = ['ISOLVER 2', 'NPC 2', 'MXITER 1000', 'INNERIT 50', 'RELAX .98', 'RCLOSEPKS 1.0E-05',
+              'GDELR', '{}'.format(delr), 'GDELC', '{}'.format(delc),'NOVLAPADV 2', 'END']
+pkst_lines = ['ISOLVER 2', 'NPC 2', 'MXITER 1000', 'INNERIT 50', 'RELAX .98', 'RCLOSEPKS 1.0E-04',
               'HCLOSEPKS 1.0E+12', 'RELATIVE-L2NORM', 'END']
 # 'CCLOSEPKS=0.00001'
 
@@ -400,9 +418,11 @@ ibound_arr_dir = os.path.join(model_dir, 'ibound_arr.npy')
 if not os.path.isfile(ibound_arr_dir):
     np.save(ibound_arr_dir, ibound_sm)
 #%% Creat Batch file
+
+#with open(os.path.join(model_dir,'opt_runmod_par.bat'))
 #########LINUX#######################    
     # Writing Linux shell script
-    #with open('runmod.sh','w') as infile:
+    #with open('runmod_parallel.sh','w') as infile: 
      #   infile.write("#! /bin/sh  \n")
       #  infile.write("cd Models/StrPer_{} \n".format(model_nr))
        # infile.write("mpirun -np 1 --output-filename runfile /home/ariel/software/bin/seawat_svn387 chengsi_mod_{}.run \n".format(model_nr))
@@ -410,10 +430,11 @@ if not os.path.isfile(ibound_arr_dir):
     #subprocess.run(["./runmod.sh"],capture_output=True)
     #print('Stress period {} completed'.format(model_nr))
 mod_file=os.path.join(model_dir, mod_id + '.nam_swt')
+
 #####WINDOWS##########################
-#    #Writing the windows batch script
-with open('runmod_parallel.bat','w') as infile:
-    infile.write("\"{}\" -localonly 4 \"{}\" \"{}\"".format(mpich_exe,imod_path,mod_file))
-infile.close()    
+# #    #Writing the windows batch script
+# with open('runmod_parallel.bat','w') as infile:
+#     infile.write("\"{}\" -localonly 4 \"{}\" \"{}\"".format(mpich_exe,imod_path,mod_file))
+# infile.close()    
 
 #subprocess.call([r'runmod_parallel.bat'])

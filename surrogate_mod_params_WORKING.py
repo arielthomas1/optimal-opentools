@@ -23,7 +23,8 @@ Preamble:
 
 #%% Importing Libraries and functions
 import os
-work_dir=r"H:\My Drive\OPTIMAL\Project work\optimal"
+#work_dir=r"H:\My Drive\OPTIMAL\Project work\optimal"
+work_dir='/home/ariel2/Projects/optimal'
 os.chdir(work_dir)
 import numpy as np
 import seaborn as sns
@@ -32,19 +33,20 @@ import optimal_functions as of
 import matplotlib.pyplot as plt
 import math
 import random
-import geone
-import geone.covModel as gcm
+import ArchPy as ap
+#import geone
+#import geone.covModel as gcm
 
 import sys
 import pyvista as pv
-import ArchPy as ap
+
 from scipy.stats import norm
 from scipy import stats
 from scipy.interpolate import make_interp_spline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import PchipInterpolator
 # Set the seed
-np.random.seed(777)
+#np.random.seed(73)
 
 #intializing parameter propery table
 # List of parameters
@@ -61,16 +63,19 @@ par_stats = pd.DataFrame({
     'kurt': kurtosis
 })
 
+#Windows setup
+#input_data=r'H:\My Drive\OPTIMAL\Project work\optimal\surrogate_mode_tables' #input data
+#output_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections" # main folder with all output data including figures
+#mod_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\surrogate_mod_summary" # text files containing all the model parameters
 
-input_data=r'H:\My Drive\OPTIMAL\Project work\optimal\surrogate_mode_tables' #input data
-output_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections" # main folder with all output data including figures
-mod_data=r"H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\surrogate_mod_summary" # text files containing all the model parameters
-
-
+#Linux setup
+input_data='/home/ariel2/Projects/optimal/surrogate_mode_tables'
+output_data='/home/ariel2/Projects/optimal/surrogate_sections'
+mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
 #%% Coastal Sediment Thickness
 
 # Importing coastal sediment thickness estimate dataset from csv table
-df_cst_zam=pd.read_csv('{}\coastal_unconsol_thickness_zamrsky.csv'.format(input_data),delimiter=';')
+df_cst_zam=pd.read_csv('{}/coastal_unconsol_thickness_zamrsky.csv'.format(input_data),delimiter=';')
 
 # Replace commas with dots in all columns - because I am too lazy to update computer regional settings so that decimals are exported as points and not commas
 df_cst_zam = df_cst_zam.map(lambda x: str(x).replace(',', '.') if isinstance(x, str) else x)
@@ -161,14 +166,19 @@ was then extracted from the DEM at every 5KM along the buffer lines to create th
 statistical parameters'''
 
 # Data from 10 KM Buffer
-df_10km=pd.read_csv(r'{}\Australia_10KM_Buffer_Elevation.csv'.format(input_data),delimiter=';')
-df_10km_clean=of.clean_null_values(df_10km, 'Australia_elevation')
+file_10km = os.path.join(input_data, "Australia_10KM_Buffer_Elevation.csv")
+df_10km = pd.read_csv(file_10km, delimiter=';')
+df_10km_clean = of.clean_null_values(df_10km, 'Australia_elevation')
+
 # Data from 20 KM Buffer
-df_20km=pd.read_csv(r'{}\Australia_20KM_Buffer_Elevation.csv'.format(input_data),delimiter=';')
-df_20km_clean=of.clean_null_values(df_20km, 'Australia_elevation')
+file_20km = os.path.join(input_data, "Australia_20KM_Buffer_Elevation.csv")
+df_20km = pd.read_csv(file_20km, delimiter=';')
+df_20km_clean = of.clean_null_values(df_20km, 'Australia_elevation')
+
 # Data from 30 KM Buffer
-df_30km=pd.read_csv(r'{}\Australia_30KM_Buffer_Elevation.csv'.format(input_data),delimiter=';')
-df_30km_clean=of.clean_null_values(df_30km, 'Australia_elevation')
+file_30km = os.path.join(input_data, "Australia_30KM_Buffer_Elevation.csv")
+df_30km = pd.read_csv(file_30km, delimiter=';')
+df_30km_clean = of.clean_null_values(df_30km, 'Australia_elevation')
 
 # Compute statistics in one step
 stats_10km = df_10km_clean['Australia_elevation'].agg(['mean', 'std', 'skew', 'kurt']).round(1)
@@ -223,7 +233,7 @@ plt.legend()
 
 # Show plot
 plt.show()
-fig1.savefig(r'H:\My Drive\OPTIMAL\Project work\Figures\KDE_input_params.png', dpi=450, bbox_inches='tight')
+#fig1.savefig(r'H:\My Drive\OPTIMAL\Project work\Figures\KDE_input_params.png', dpi=450, bbox_inches='tight')
 
 #%% Plotting distributions
 
