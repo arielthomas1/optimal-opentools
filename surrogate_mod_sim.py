@@ -135,7 +135,7 @@ plt.title('Chengsi model relative sea level',fontsize='16')
 plt.ylabel('Relative sea level (m)',fontsize='16')
 ax.set_xlim(0,200)
 plt.legend()
-
+plt.show()
 
 
 #%% Preparing sealevel data NB. Comment out, this only needed to be done once
@@ -328,10 +328,10 @@ unitnumber = [14, 30, 52, 51]
 #   create the dictionary that defines how to write the output file
 spd = {(0, 0): ['SAVE HEAD', 'SAVE BUDGET', 'PRINT HEAD', 'PRINT BUDGET', 'SAVE HEADTEC', 'SAVE CONCTEC',
                 'SAVE VXTEC', 'SAVE VYTEC', 'SAVE VZTEC']}
-for t in range(0, nper):
+for t in range(1, nper):
     per = t  # + 1
     #   to save space on disk, every 10th timestep is saved
-    spd[(per, nstp[t] + 1)] = ['SAVE HEAD', 'SAVE BUDGET', 'PRINT HEAD', 'PRINT BUDGET', 'SAVE HEADTEC', 'SAVE CONCTEC',
+    spd[(per, nstp[t])] = ['SAVE HEAD', 'SAVE BUDGET', 'PRINT HEAD', 'PRINT BUDGET', 'SAVE HEADTEC', 'SAVE CONCTEC',
                           'SAVE VXTEC', 'SAVE VYTEC', 'SAVE VZTEC']
 oc = fp.modflow.ModflowOc(swt, ihedfm=ihedfm, stress_period_data=spd, unitnumber=unitnumber, compact=True)
 
@@ -346,7 +346,8 @@ chkmas = False
 nprmas = 10
 nprobs = 10
 total_sim_time=sum(perlen)
-timprs_lst = list(np.linspace(1,total_sim_time,nper,endpoint=True,dtype=int))
+#timprs_lst = list(np.linspace(1,total_sim_time,nper,endpoint=True,dtype=int))
+timprs_lst = np.cumsum(perlen).tolist()
 btn = fp.mt3d.Mt3dBtn(swt, nprs=nprs, timprs=timprs_lst, prsity=porosity, sconc=sconc_arr,
                          ifmtcn=ifmtcn, chkmas=chkmas, nprobs=nprobs, nprmas=nprmas, dt0=0)
 #%% ADV Package

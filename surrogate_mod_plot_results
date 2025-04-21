@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 16 17:28:53 2025
+
+@author: ariel2
+"""
+
+import xarray as xr
+import matplotlib.pyplot as plt
+import os
+#work_dir='/home/ariel2/Projects/optimal_mod_runs/'
+#os.chdir(work_dir)
+
+#%%
+mod_name='sm_7'
+par='conc'
+
+# Load the NetCDF file
+file_path = os.join.path(work_dir,mod_name,+ 'results'+'_netcdf'+ '_{}_{}.nc'.format(par,mod_name))
+ds = xr.open_dataset(file_path)
+
+# Print basic info about the dataset
+print(ds)
+
+# Print all variable names
+print("\nVariables in dataset:")
+print(list(ds.data_vars))
+
+# View coordinates
+print("\nCoordinates:")
+print(ds.coords)
+
+# If you want a quick peek at the data
+print("\nSample of one variable:")
+print(ds[list(ds.data_vars)[0]])
