@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import math
 from scipy.stats import norm
+import re
 
 def plot_gaussian_distribution(variable_name, mean, std_dev):
     # Generate values for the x-axis
@@ -315,3 +316,143 @@ def apply_porosity_compaction(mod_dict, mod_id, comp_coeff):
     comp_facies1 = expo_trend(-z_array, por_facies1, comp_coeff)
 
     return comp_facies1
+
+#****************************************************************#
+# QC and Post processing
+#****************************************************************#
+
+def check_model_runs(base_folder, num_realizations):
+    """
+    Checks for successful MODFLOW model runs in a Monte Carlo simulation.
+
+    Args:
+        base_folder (str): The base directory containing the model subfolders.
+        num_realizations (int): The total number of model realizations.
+
+    Returns:
+        pandas.DataFrame: A DataFrame with columns 'model_name' and 'complete_run'
+                          (1 for complete, 0 for incomplete), and the overall success rate.
+    """
+
+    results = []
+    successful_runs = 0
+    failed_runs = []
+    complete_runs = []
+
+    for i in range(1, num_realizations + 1):
+        model_name = f'sm_{i}'
+        model_folder = os.path.join(base_folder, model_name)
+        output_file = os.path.join(model_folder, 'concvelo.tec')  # Corrected file name
+
+        if os.path.exists(output_file):
+            results.append({'model_name': model_name, 'complete_run': 1})
+            complete_runs.append(model_name)
+            successful_runs += 1
+        else:
+            results.append({'model_name': model_name, 'complete_run': 0})
+            failed_runs.append(model_name)
+
+    df = pd.DataFrame(results)
+    success_rate = (successful_runs / num_realizations) * 100
+    print(f"Success Rate: {success_rate:.2f}%")
+    return df, complete_runs,failed_runs
+
+def count_nper_infile(filename, search_string):
+    '''counts how many stress periods are written out in the output file assuming the marker
+    is known and input as search_string. eg. ZONE  T='''
+    count = 0
+    with open(filename, 'r', encoding='utf-8', errors='ignore') as file:
+        for line in file:
+            count += line.count(search_string)
+    return count
+
+def create_results_folder(mod_dir):
+    ''' creates the folder to store modified model output files for each stress period '''
+    results_path = os.path.join(mod_dir, 'results')
+    os.makedirs(results_path, exist_ok=True)
+    return results_path
+
+def split_sp_outputs(file_path,out_dir):
+    '''A function to read the concvelo output file and split each stress period into a seperate 
+    file. 
+    inputs: path to convelo.tec file in model folder
+            output folder to store the split files
+    returns: indivual files for each stress period with the format results_sp{i}'''
+    # Read the entire file
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    
+    zone_indices = []
+    # Find all lines where 'ZONE T=' appears
+    for i, line in enumerate(lines):
+        if re.match(r'\s*ZONE\s+T\s*=', line):
+            zone_indices.append(i)
+    
+    # Add end of file to help with last chunk
+    zone_indices.append(len(lines))
+    
+    # Split and save each zone section
+    for i in range(len(zone_indices) - 1):
+        start_idx = zone_indices[i]
+        end_idx = zone_indices[i + 1]
+        chunk_lines = lines[start_idx:end_idx]
+    
+        # Include headers if needed — find the first "VARIABLES=" above the first zone
+        if i == 0:
+            header_lines = []
+            for j in range(start_idx - 1, -1, -1):
+                if "VARIABLES=" in lines[j]:
+                    header_lines = lines[j:start_idx]
+                    break
+            chunk_lines = header_lines + chunk_lines
+    
+        # Save to file
+        output_file = os.path.join(out_dir, f"results_sp{i + 1}.tec")
+        with open(output_file, 'w') as out_file:
+            out_file.writelines(chunk_lines)
+    
+        print(f"Saved: {output_file}")
+        
+def clean_tec_file(input_file, search_string='ZONE T='):
+    # Create output filename
+    base, ext = os.path.splitext(input_file)
+    output_file = f"{base}_cleaned{ext}"
+
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as infile, \
+         open(output_file, 'w', encoding='utf-8') as outfile:
+        for line in infile:
+            if search_string in line:
+                continue  # skip lines with 'ZONE T='
+            elif 'VARIABLES=' in line:
+                cleaned_line = line.replace('VARIABLES=', '').lstrip()
+                outfile.write(cleaned_line)
+            else:
+                outfile.write(line)
+
+    return output_file
+
+def print_last_lines(filename, num_lines=10):
+    """
+    Prints the last N lines of a file.
+
+    Args:
+        filename: The path to the file.
+        num_lines: The number of lines to print (default: 10).
+    """
+    if not os.path.exists(filename):
+        print(f"Error: File not found: {filename}")
+        return  # Exit the function if the file doesn't exist
+
+    try:
+        with open(filename, "r") as f:
+            lines = f.readlines()  # Read all lines into a list
+            if len(lines) >= num_lines:
+                last_lines = lines[-num_lines:]  # Get the last N lines
+            else:
+                last_lines = lines  # If the file has fewer than N lines, get all of them
+            for line in last_lines:
+                print(line.strip())  # Print each line without leading/trailing whitespace
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+
+

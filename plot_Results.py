@@ -1,58 +1,66 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 16 17:31:02 2025
 
-@author: ariel2
-"""
-
-import xarray as xr
-import matplotlib.pyplot as plt
 import os
 import numpy as np
+import optimal_functions as of
+import matplotlib.pyplot as plt
 work_dir='/home/ariel2/Projects/optimal_mod_runs/'
 os.chdir(work_dir)
 from matplotlib import colors
+import re
+
+mod_id='sm_7'
+
+mod_dir= os.path.join(work_dir,mod_id)
 #%%
-mod_name='sm_7'
-par='conc'
+df_mod_runs,completed,failed=of.check_model_runs(work_dir,25)
 
-# Load the NetCDF file
-file_path = os.path.join(work_dir,mod_name, 'results','_netcdf','_{}_{}.nc'.format(par,mod_name))
-ds = xr.open_dataset(file_path)
+#%% 
+# SPlit stress periods
+# Set path to your .tec file
+file_path =os.path.join(work_dir,mod_id,'concvelo.tec')
 
-# Print basic info about the dataset
-print(ds)
+# Directory to save the split files
+output_dir = os.path.join(work_dir,mod_id)
 
-# Print all variable names
-print("\nVariables in dataset:")
-print(list(ds.data_vars))
 
-# View coordinates
-print("\nCoordinates:")
-print(ds.coords)
+        
+        
+# Clean files
+of.split_sp_outputs(file_path,output_dir)
 
-# If you want a quick peek at the data
-print("\nSample of one variable:")
-print(ds[list(ds.data_vars)[0]])
+num_per=of.count_nper_infile(file_path,search_string='ZONE T=')
+for i in range(1, num_per + 1):
+    filename = os.path.join(mod_dir, f"results_sp{i}.tec")
+    of.clean_tec_file(filename)
+#%%
 
-var_name = 'conc'  # Change this to your actual variable name
-conc_arr = ds[var_name].values
-conc_arr[conc_arr > 1000.] = np.nan
-# Slice the data at time=0 and y=50 to get Z vs X
-ts=0
-salinity_arr = conc_arr[ts, :, 0, :]
 
-# Make the plot
-plt.figure(figsize=(10, 6))
-# Transpose to get Z on the y-axis and X on the x-axis (optional based on how your data is structured)
-plt.imshow(salinity_arr,
-           aspect='auto', 
-           cmap='viridis')
-plt.colorbar(label='Value')
-plt.xlabel('X')
-plt.ylabel('Z')
-plt.title('2D Cross-section (Z vs X)')
-plt.tight_layout()
-plt.savefig("cross_section.png", dpi=300)
+# Assuming your porosity array is named 'porosity' and has shape [294, 1, 1600]
+# Load your porosity data here
+# For example:
+# porosity = np.load('path/to/your/porosity.npy')
+np.random.seed(42) # for demonstration
+porosity = np.random.rand(294, 1, 1600) * 0.4 + 0.1 # Example porosity values between 0.1 and 0.5
+
+# Reshape the porosity array to 2D
+porosity_2d = porosity.squeeze()
+
+# Determine the extent of your model (assuming unit spacing)
+extent = [0, porosity_2d.shape[1], porosity_2d.shape[0], 0]
+
+# Create the plot
+fig, ax = plt.subplots()
+
+# Plot the porosity data using imshow
+im = ax.imshow(porosity_2d, cmap='viridis', extent=extent, aspect='auto') # Using 'viridis' colormap
+
+# Add labels and title
+ax.set_xlabel('X-direction (Column)')
+ax.set_ylabel('Z-direction (Row)')
+ax.set_title('Porosity Distribution (X vs Z)')
+
+# Add a colorbar to show porosity values
+cbar = fig.colorbar(im, ax=ax, shrink=0.6, label='Porosity')
+
+# Show the plot
 plt.show()

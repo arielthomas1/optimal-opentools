@@ -34,9 +34,8 @@ import matplotlib.pyplot as plt
 import math
 import random
 import ArchPy as ap
-#import geone
-#import geone.covModel as gcm
-
+import geone
+import geone.covModel as gcm
 import sys
 import pyvista as pv
 
@@ -51,8 +50,8 @@ from scipy.interpolate import PchipInterpolator
 #intializing parameter propery table
 # List of parameters
 parameters = ['sw', 'sbd','cust', 'cst', 'tst', 'te_10km', 'te_20km','te_30km','tos']
-mean_vals = [110, 130, 300,150, 150, 700, 800, 900, 3000 ]
-std_val = [30, 20, 100,10, 50, 50, 50, 50,  500 ]
+mean_vals = [110, 130, 300,150, 150, 700, 800, 900, 2500 ]
+std_val = [30, 20, 100,10, 50, 50, 50, 50,  200 ]
 skew = [3,0,0,0,0,0,0,0,0]
 kurtosis = [8,3,3,3,3,3,3,3,3]
 par_stats = pd.DataFrame({
@@ -72,6 +71,7 @@ par_stats = pd.DataFrame({
 input_data='/home/ariel2/Projects/optimal/surrogate_mode_tables'
 output_data='/home/ariel2/Projects/optimal/surrogate_sections'
 mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
+fig_fol='/home/ariel2/Projects/optimal/surrogate_sections/figures'
 #%% Coastal Sediment Thickness
 
 # Importing coastal sediment thickness estimate dataset from csv table
@@ -205,35 +205,70 @@ fig1=plt.figure(figsize=(10, 6))
 # Initialize the x-axis range to accommodate all distributions
 min_value = float('inf')
 max_value = float('-inf')
-df_par_stats = par_stats.loc[par_stats['parameter'] != 'tos']
+#df_par_stats = par_stats.loc[par_stats['parameter'] != 'tos']
+df_par_stats = par_stats.loc[(par_stats['parameter'] != 'tos') & (par_stats['parameter'] != 'cst')]
+
 # Loop through each row of the DataFrame to calculate distributions
+# for index, row in df_par_stats.iterrows():
+#     parameter = row['parameter']
+#     mean = row['mean']
+#     std_dev = row['std_dev']
+    
+#     # Generate data for the distribution based on mean and std_dev extracted from global datasets
+#     distribution_data = np.random.normal(loc=mean, scale=std_dev, size=10000)
+    
+#     # Plot the KDE on the same axes, including the mean and std. dev. of each parameter in the legend
+#     sns.kdeplot(distribution_data, fill=True, label=f'{parameter} - $\mu$: {mean} , $\sigma$: {std_dev}')
+    
+#     # Adjust the range for the x-axis to fit all distributions
+#     min_value = min(min_value, mean - 4 * std_dev)
+#     max_value = max(max_value, mean + 4 * std_dev)
+
+# # Set the x-axis limits based on the largest distribution
+# plt.xlim(min_value, max_value)
+
+# # Add title and legend
+# plt.title('KDE of Surrogate model input parameters')
+# plt.xlabel('Value')
+# plt.ylabel('Density')
+# plt.legend()
+from scipy.stats import gamma
 for index, row in df_par_stats.iterrows():
     parameter = row['parameter']
     mean = row['mean']
     std_dev = row['std_dev']
-    
-    # Generate data for the distribution based on mean and std_dev extracted from global datasets
-    distribution_data = np.random.normal(loc=mean, scale=std_dev, size=10000)
-    
-    # Plot the KDE on the same axes, including the mean and std. dev. of each parameter in the legend
-    sns.kdeplot(distribution_data, fill=True, label=f'{parameter} - $\mu$: {mean} , $\sigma$: {std_dev}')
-    
-    # Adjust the range for the x-axis to fit all distributions
-    min_value = min(min_value, mean - 4 * std_dev)
-    max_value = max(max_value, mean + 4 * std_dev)
+    skewness = row['skew']
 
-# Set the x-axis limits based on the largest distribution
+    # Approximate Gamma parameters (this is a simplification, more robust methods exist)
+    if skewness > 0:  # Gamma distribution is often used for positive skew
+        alpha = 4 / skewness**2  # shape parameter
+        beta = mean / alpha       # scale parameter
+        if alpha > 0 and beta > 0:
+            distribution_data = gamma.rvs(a=alpha, scale=beta, size=20000)
+            sns.kdeplot(distribution_data, fill=True, label=f'{parameter} - $\mu$:{mean:.2f}, $\sigma$:{std_dev:.2f}, Sk:{skewness:.2f}')
+
+            min_value = min(min_value, np.min(distribution_data))
+            max_value = 600#max(max_value, np.max(distribution_data))
+        else:
+            print(f"Warning: Invalid Gamma parameters for {parameter}")
+    else:
+        # Fallback to clipping normal distribution if skewness is not positive
+        distribution_data = np.random.normal(loc=mean, scale=std_dev, size=10000)
+        distribution_data[distribution_data < 0] = 0
+        sns.kdeplot(distribution_data, fill=True, label=f'{parameter} - $\mu$:{mean:.2f}, $\sigma$:{std_dev:.2f}, Sk:{skewness:.2f}')
+        min_value = min(min_value, np.min(distribution_data))
+        max_value = 600#max(max_value, np.max(distribution_data))
+
 plt.xlim(min_value, max_value)
-
-# Add title and legend
-plt.title('KDE of Surrogate model input parameters')
-plt.xlabel('Value')
-plt.ylabel('Density')
-plt.legend()
+plt.title('KDE of Surrogate model input parameters (with Skewness)',fontsize=18)
+plt.xlabel('Value (m)', fontsize=16)
+plt.ylabel('Density', fontsize=16)
+plt.legend(fontsize=12)
+plt.show()
 
 # Show plot
 plt.show()
-#fig1.savefig(r'H:\My Drive\OPTIMAL\Project work\Figures\KDE_input_params.png', dpi=450, bbox_inches='tight')
+fig1.savefig(f'{fig_fol}/KDE_input_params_corrected.png', dpi=450, bbox_inches='tight')
 
 #%% Plotting distributions
 
@@ -268,14 +303,14 @@ extracted from the distributions visualized in the previous step'''
 #TODO Develop a methodology to QC the shape of the model create and cast out unrealistic creations
 
 # Set the total number of surrogate models to generate
-num_models = 10
+num_models = 20
 
 # Dictionary to store seeds for reproducibility
 seeds_dict = {}
 
 # Loop to create surrogate models
-for i in range(1, num_models + 1):
-    SEED = np.random.randint(239)
+for i in range(10, num_models + 1):
+    SEED = np.random.randint(2569)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'
     
@@ -326,7 +361,7 @@ for i in range(1, num_models + 1):
     #--------------
     # OTHER SUPPORTING PARAMETERS
     tst=int(0.66*cst)
-    slope_width=20000 # hor. distance between shelf break and toe of slope in m
+    slope_width=random.randint(15000, 20000) # hor. distance between shelf break and toe of slope in m
     mod_len=inland_sect+int(sw)+slope_width # Defining the simulation grid size. 
     unconsol_ratio=cust/cst
     #--------------
@@ -363,15 +398,16 @@ for i in range(1, num_models + 1):
     plt.legend()
     plt.xlabel("Distance (km)")
     plt.ylabel("Depth (m)")
-    plt.title("Control Points QC Sanity Check")
+    plt.title(f"Control Points QC Sanity Check - {mod_id}")
     plt.grid()
     plt.show()
     # Creating synthentic Boreholes to Anchor surrogate model surfaces.
     '''Four boreholes will be created for each SM realization. 
     The boreholes a, b, c and d will represent the control points at the
      inland mark, coast, shelf break and toe of slope, respectively.'''
-    
-    with open(r"{}\surrogate_boreholes\bh_{}.lbh".format(output_data,mod_id),"w") as file:
+    bh_folder="/home/ariel2/Projects/optimal/surrogate_sections/surrogate_boreholes"
+
+    with open(r"{}/bh_{}.lbh".format(bh_folder,mod_id),"w") as file:
         file.write('bh_ID,bh_x,bh_y,bh_z,bh_depth\n')
         file.write('a,1,50,{},{}\n'.format(top_elev/10,td_a/10)) # inland anchor point
         file.write('b,{},50,5,{}\n'.format(inland_sect/100,td_b/10)) # coastal anchor point
@@ -381,7 +417,7 @@ for i in range(1, num_models + 1):
     #TODO Add sanity checks for values to ensure they honour realistic geometry
     
     #Generating list of unit data in boreholes
-    with open(r"{}\surrogate_boreholes\bh_{}.ud".format(output_data,mod_id),"w") as file:
+    with open(r"{}/bh_{}.ud".format(bh_folder,mod_id),"w") as file:
         file.write('bh_ID,Strat,top,bot\n')
         file.write('a,U,{},{} \n'.format(top_elev/10,(top_elev-tst)/10)) # inland anchor point
         file.write('a,L,{},{} \n'.format((top_elev-tst)/10,-tos/10))
@@ -393,7 +429,7 @@ for i in range(1, num_models + 1):
         #file.write('d,L,{},{} \n'.format(-tos/10,-tos/10))
         
     #Generating list of facies data in boreholes
-    with open(r"{}\surrogate_boreholes\bh_{}.fd".format(output_data,mod_id),"w") as file:
+    with open(r"{}/bh_{}.fd".format(bh_folder,mod_id),"w") as file:
         file.write('bh_ID,facies_ID,top,bot\n')
         file.write('a,silt,{},{} \n'.format(top_elev/10,(top_elev-tst)/10)) # inland anchor point
         file.write('a,rock,{},{} \n'.format((top_elev-tst)/10,-tos/10))
@@ -405,19 +441,18 @@ for i in range(1, num_models + 1):
         #file.write('d,rock,{},{} \n'.format(-tos/10,-tos/10))
         
     # Defining path to bh files and data
-    bh_folder=r"H:/My Drive/OPTIMAL/Project work/optimal/surrogate_sections/surrogate_boreholes"
     bh_path=pd.read_csv(os.path.join(bh_folder,'bh_{}.lbh'.format(mod_id)))
     units_path=pd.read_csv(os.path.join(bh_folder,'bh_{}.ud'.format(mod_id)))
     facies_path=pd.read_csv(os.path.join(bh_folder,'bh_{}.fd'.format(mod_id)))
     
-    with open(r"{}\surrogate_mod_summary\{}.txt".format(output_data,mod_id), "w") as file:
+    with open(r"{}/surrogate_mod_summary/{}.txt".format(output_data,mod_id), "w") as file:
         file.write('Model parameter summary (m): \n Inland distance = {} \n Shelf width = {} \n Slope width = {} \n Shelf break depth = {} \n Toe of slope = {} \n Shelf gradient (deg)= {} \n Inland length = {} \n Total model length = {} \n Top elevation = {} \n Terrestrial sediment = {}  \n Coastal sediment = {}\n Unconsol. ratio = {} \n\nAquifer dimsensions (m): \n'.format(inland_sect,sw,slope_width,sbd,tos,slope_angle,inland_sect,mod_len,top_elev,tst,cst,cust/cst)) 
     file.close()
 
 #print('Model parameter summary (m): \n Shelf width = {} \n Slope width = {} \n Shelf break depth = {} \n Shelf gradient (deg)= {} \n Inland length = {} \n Total Model length = {} \n Top Elevation = {} \n Terrestrial sediment = {}  \n Coastal sediment = {}\n Unconsol. ratio = {}'.format(sw,slope_width,sbd,slope_angle,inland_sect,mod_len,top_elev,tst,cst,cust/cst))
 
 # Save seeds to a file for reproducibility
-with open(r"{}\seeds.txt".format(output_data), "w") as file:
+with open(r"{}/seeds.txt".format(output_data), "w") as file:
     for mod_id, seed in seeds_dict.items():
         file.write(f"{mod_id}: {seed}\n")
         
@@ -437,7 +472,7 @@ df_ud=pd.DataFrame(columns=ud_header)
 mod_dict = {}
 
 # Loop to generate multiple ArchPy objects
-for i in range(1, num_models + 1):
+for i in range(10, num_models + 1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -472,11 +507,11 @@ for i in range(1, num_models + 1):
     
     sw=of.read_mod_file(mod_data,mod_id, 'Shelf width') #Extracting model shelf width from summary file
     
-    aq_len=random.randint(0, int(sw) // 100)*100 # length of the aquifer
-    ob_thickness=random.randint(0,500) #thickness of the overburden layer or depth to top of aq.
-    aq1_thickness=random.randint(50,400) #thickness of aquifer itself
+    aq_len=random.randint(5000, int(sw)) # length of the aquifer
+    ob_thickness=random.randint(0,200) #thickness of the overburden layer or depth to top of aq.
+    aq1_thickness=random.randint(200,600) #thickness of aquifer itself
     # Write the aquifer properties to the model summary file
-    with open(r"{}\surrogate_mod_summary\{}.txt".format(output_data,mod_id), "a") as file:
+    with open(r"{}/surrogate_mod_summary/{}.txt".format(output_data,mod_id), "a") as file:
         file.write(' Aquifer length = {} \n Overburden thickness = {} \n Aquifer1 thickness = {} \n'.format(aq_len,ob_thickness,aq1_thickness))
     file.close()
         
@@ -528,7 +563,7 @@ for i in range(1, num_models + 1):
         bh_z=np.floor(z_bhs),
         bh_depth=np.floor(td_bhs)
     )
-    df_lbh.to_csv(r"{}\surrogate_boreholes\bh_{}.lbh".format(output_data,mod_id),index=False)
+    df_lbh.to_csv(r"{}/surrogate_boreholes/bh_{}.lbh".format(output_data,mod_id),index=False)
     #print(df_lbh) #for QC
     ### Adding stratigraphic units for ArchPy
     # Start index
@@ -549,7 +584,7 @@ for i in range(1, num_models + 1):
         row_idx += 1
         
     #writing to df
-    df_ud.to_csv(r"{}\surrogate_boreholes\bh_{}.ud".format(output_data,mod_id),index=False)
+    df_ud.to_csv(r"{}/surrogate_boreholes/bh_{}.ud".format(output_data,mod_id),index=False)
     #print(df_ud) #for QC
 
     #Adding Facies to units
@@ -569,7 +604,7 @@ for i in range(1, num_models + 1):
         df_fd.loc[row_idx] = [bh_id, 'silt', np.floor(sed_column_top),np.floor(sed_column_bot)]  # Add values row by row
         row_idx += 1
         
-    df_fd.to_csv(r"{}\surrogate_boreholes\bh_{}.fd".format(output_data,mod_id),index=False)
+    df_fd.to_csv(r"{}/surrogate_boreholes/bh_{}.fd".format(output_data,mod_id),index=False)
     #print(df_fd) #for QC
 
     # Plotting for QC
@@ -630,7 +665,7 @@ for i in range(1, num_models + 1):
                          dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
                          contact='onlap')
 #### UNITS AND FACIES #####
-    cov_mod_sand=gcm.CovModel3D(elem=[('spherical',{'w':slope_angle,'r':[8000,100,100]})],
+    cov_mod_sand=gcm.CovModel3D(elem=[('spherical',{'w':slope_angle,'r':[10000,100,100]})],
                                  alpha=0,beta=slope_angle,gamma=0)
     cov_mod_shale=gcm.CovModel3D(elem=[('spherical',{'w':slope_angle,'r':[10000,100,100]})],
                                  alpha=0,beta=slope_angle,gamma=0)
@@ -642,18 +677,29 @@ for i in range(1, num_models + 1):
                      surface=top,
                      dic_facies=ob_facies)
 
-    #defining aquifer unit
-    aq_facies={'f_method':'SIS','f_covmodel':cov_mod_sand,'probability':[0.8,0.2]}
+    # Stochastic version
+    # defining aquifer unit
+    # aq_facies={'f_method':'SIS','f_covmodel':cov_mod_sand,'probability':[0.8,0.2]}
+    
+    # Homogenous version # Testing this option to improve numerical model stability  
+    # defining aquifer unit
+    aq_facies={'f_method':'homogenous','f_covmodel':None}
     aq1=ap.base.Unit(name='aq1',
                      order=2,
                      color='yellow',
                      surface=top_aq1,
                      dic_facies=aq_facies)
+    
 
-    #defining underlying unit
-    sed_col_facies={'f_method':'SIS',
-                    'f_covmodel':[cov_mod_sand,cov_mod_sand,cov_mod_shale],
-                     'probability':[0.2,0.4,0.4]}
+
+
+    # # Sochastic version - defining underlying unit
+    # sed_col_facies={'f_method':'SIS',
+    #                 'f_covmodel':[cov_mod_sand,cov_mod_sand,cov_mod_shale],
+    #                  'probability':[0.2,0.4,0.4]}
+    # # Homogenous version - defining underlying unit
+    sed_col_facies={'f_method':'homogenous','f_covmodel':None}
+    
     sed_col=ap.base.Unit(name='sed_col',
                      order=3,
                      color='darkorange',
@@ -701,42 +747,63 @@ for i in range(1, num_models + 1):
     gravel=ap.base.Facies(ID=4, name='gravel',color='palegreen')
     rock=ap.base.Facies(ID=5, name='rock', color='darkgray' )
 
-    aq1.add_facies([sand,silt])
-    ob1.add_facies([clay])
-    sed_col.add_facies([sand,silt,clay])
-    U.add_facies([sand,silt,clay])
+    # # Geostatistical version 
+    # ''' i.e. Each unit consists of multiple facies determined by stochastic model'''
+    # aq1.add_facies([sand,silt])
+    # ob1.add_facies([clay])
+    # sed_col.add_facies([sand,silt,clay])
+    # U.add_facies([sand,silt,clay])
     #U.add_facies([sand])
-
+    # Homoegenous facies version
+    ''' i.e. each unit only consits of one facies type'''
+    aq1.add_facies([sand])
+    ob1.add_facies([clay])
+    sed_col.add_facies([silt])
+    U.add_facies([sand,silt,clay])
     #Adding properties
     '''Porosity typically exhibits a gaussian normal distribution so this type
     of model will be assigned.'''
     
-    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[5000,100,100]})],
+    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/3,100,200]})],
                                  alpha=0,beta=slope_angle,gamma=0)
     
-    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[5000,100,100]})],
+    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/3,100,200]})],
                                  alpha=0,beta=slope_angle,gamma=0)
-    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[10000,100,100]})],
+    
+    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/2,100,200]})],
                                  alpha=0,beta=slope_angle,gamma=0)
     mean_vals_por=[0.3,0.45,0.6]
-    mean_vals_k=[10,1,0.1]
+    mean_vals_k=[10,5,3]
     list_facies=[sand,silt,clay]
 
+    # STOCHASTIC
+    # por=ap.base.Prop(name="Por",facies=list_facies,
+    #                  covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
+    #                  means=mean_vals_por,
+    #                  int_method="sgs",
+    #                  vmin=0.20,
+    #                  vmax=0.65)
     
+    # hyd_con=ap.base.Prop(name='K',facies=list_facies,
+    #                      covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
+    #                      means=mean_vals_k,
+    #                      int_method='sgs',
+    #                      vmin=0.05,
+    #                      vmax=13)
+    # HOMOEGENOUS
     por=ap.base.Prop(name="Por",facies=list_facies,
-                     covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
+                     covmodels=[cov_mod_por,None,None],
                      means=mean_vals_por,
-                     int_method="sgs",
+                     int_method=["sgs","homogenous","homogenous"],
                      vmin=0.20,
                      vmax=0.65)
     
     hyd_con=ap.base.Prop(name='K',facies=list_facies,
-                         covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
+                         covmodels=[cov_mod_k,None,None],
                          means=mean_vals_k,
-                         int_method='sgs',
+                         int_method=["sgs","homogenous","homogenous"],
                          vmin=0.05,
                          vmax=13)
-    
 
     #Adding porosity to model object'
     mod_dict[mod_id].add_prop(por)
@@ -769,48 +836,48 @@ for i in range(1, num_models + 1):
     ap.inputs.save_project(mod_dict[mod_id])
     
 #%% Computing compacted Porosity field
-mod_id='sm_10'
-por_facies1=mod_dict[mod_id].get_prop('Por')
-#get the 2D porosity array out of the default 5D array returned bz get_prop function.
-por_facies1=por_facies1[0,0,0,:,0,:]
-# Initialize a 2D array to store the compacted porosity
-comp_facies1 = np.full_like(por_facies1, por_facies1)  
-#Predefined porosity compaction coeff. 
-comp_coeff=-0.0005
+# mod_id='sm_10'
+# por_facies1=mod_dict[mod_id].get_prop('Por')
+# #get the 2D porosity array out of the default 5D array returned bz get_prop function.
+# por_facies1=por_facies1[0,0,0,:,0,:]
+# # Initialize a 2D array to store the compacted porosity
+# comp_facies1 = np.full_like(por_facies1, por_facies1)  
+# #Predefined porosity compaction coeff. 
+# comp_coeff=-0.0005
 
-#make depth array
-z_vals=mod_dict[mod_id].get_zgc()
+# #make depth array
+# z_vals=mod_dict[mod_id].get_zgc()
 
-##Expanding the depth vector to a 2D array 
-z_vals=z_vals[:,np.newaxis]
-z_array = np.tile(z_vals, (1, por_facies1.shape[1]))
-mask=z_array<0 # Boolean mask for negative depth values
+# ##Expanding the depth vector to a 2D array 
+# z_vals=z_vals[:,np.newaxis]
+# z_array = np.tile(z_vals, (1, por_facies1.shape[1]))
+# mask=z_array<0 # Boolean mask for negative depth values
 
-#Applying the compaction to the porosity field
-comp_facies1[mask]=of.expo_trend(-z_array[mask],por_facies1[mask],comp_coeff)
+# #Applying the compaction to the porosity field
+# comp_facies1[mask]=of.expo_trend(-z_array[mask],por_facies1[mask],comp_coeff)
 
 
-# Define a shared color scale
-# Define a shared color scale ignoring NaN values
-vmin = 0.1
-vmax = 0.65
-# Create subplots
-fig, axes = plt.subplots(2, 1, figsize=(6, 5), sharex=True, sharey=True)
+# # Define a shared color scale
+# # Define a shared color scale ignoring NaN values
+# vmin = 0.1
+# vmax = 0.65
+# # Create subplots
+# fig, axes = plt.subplots(2, 1, figsize=(6, 5), sharex=True, sharey=True)
 
-# Plot Porosity Field
-im1 = axes[0].imshow(np.flipud(por_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
-axes[0].set_title("Original Porosity Field")
+# # Plot Porosity Field
+# im1 = axes[0].imshow(np.flipud(por_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
+# axes[0].set_title("Original Porosity Field")
 
-axes[0].set_ylabel("i")
+# axes[0].set_ylabel("i")
 
-# Plot Compacted Porosity Field
-im2 = axes[1].imshow(np.flipud(comp_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
-axes[1].set_title("Compacted Porosity Field")
-axes[1].set_xlabel("k")
+# # Plot Compacted Porosity Field
+# im2 = axes[1].imshow(np.flipud(comp_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
+# axes[1].set_title("Compacted Porosity Field")
+# axes[1].set_xlabel("k")
 
-# Add a shared colorbar
-cbar = fig.colorbar(im1, ax=axes, orientation="vertical", fraction=0.02, pad=0.02)
-cbar.set_label("Porosity")
+# # Add a shared colorbar
+# cbar = fig.colorbar(im1, ax=axes, orientation="vertical", fraction=0.02, pad=0.02)
+# cbar.set_label("Porosity")
 
 
 #Saving Figure

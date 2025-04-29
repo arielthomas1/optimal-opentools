@@ -35,31 +35,10 @@ Units:
     ID: 2
     color: yellow
     dic_facies:
-      SIS_orientation: false
-      azimuth: 0
-      dip: 0
-      f_covmodel:
-        alpha: 0.0
-        beta: 0.04
-        elem:
-        - !!python/tuple
-          - spherical
-          - r:
-            - 8000.0
-            - 100.0
-            - 100.0
-            w: 0.04
-        gamma: 0.0
-      f_method: SIS
-      neig: 10
-      plunge: 0
-      probability:
-      - 0.8
-      - 0.2
-      r: 1
+      f_covmodel: null
+      f_method: homogenous
     list_facies:
     - sand
-    - silt
     name: aq1
     order: 2
     surface:
@@ -110,55 +89,10 @@ Units:
     ID: 3
     color: darkorange
     dic_facies:
-      SIS_orientation: false
-      azimuth: 0
-      dip: 0
-      f_covmodel:
-      - alpha: 0.0
-        beta: 0.04
-        elem:
-        - !!python/tuple
-          - spherical
-          - r:
-            - 8000.0
-            - 100.0
-            - 100.0
-            w: 0.04
-        gamma: 0.0
-      - alpha: 0.0
-        beta: 0.04
-        elem:
-        - !!python/tuple
-          - spherical
-          - r:
-            - 8000.0
-            - 100.0
-            - 100.0
-            w: 0.04
-        gamma: 0.0
-      - alpha: 0.0
-        beta: 0.04
-        elem:
-        - !!python/tuple
-          - spherical
-          - r:
-            - 10000.0
-            - 100.0
-            - 100.0
-            w: 0.04
-        gamma: 0.0
-      f_method: SIS
-      neig: 10
-      plunge: 0
-      probability:
-      - 0.2
-      - 0.4
-      - 0.4
-      r: 1
+      f_covmodel: null
+      f_method: homogenous
     list_facies:
-    - sand
     - silt
-    - clay
     name: sed_col
     order: 3
     surface:
@@ -218,14 +152,14 @@ facies_computed: 1
 grid:
   bot: sm_10.bot
   dimensions: !!python/tuple
-  - 1600
+  - 1091
   - 1
-  - 294
+  - 224
   mask: sm_10.msk
   origin: !!python/tuple
   - 0.0
   - 0.0
-  - -2900.0
+  - -2170.0
   rotation_angle: 0
   spacing: !!python/tuple
   - 100.0
@@ -258,38 +192,18 @@ properties:
         - -1
         - 0
       - !!binary |
-        exSuR+F6pD8=
+        exSuR+F6tD8=
       elem:
       - !!python/tuple
         - gaussian
         - r:
-          - 5000.0
+          - 36366.666666666664
           - 100.0
-          - 100.0
-          w: 0.04
+          - 200.0
+          w: 0.08
       gamma: 0
-    - alpha: 0.0
-      beta: 0.04
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 5000.0
-          - 100.0
-          - 100.0
-          w: 0.04
-      gamma: 0.0
-    - alpha: 0.0
-      beta: 0.04
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 10000.0
-          - 100.0
-          - 100.0
-          w: 0.04
-      gamma: 0.0
+    - null
+    - null
     def_mean: 1
     facies:
     - sand
@@ -297,12 +211,12 @@ properties:
     - clay
     int_method:
     - sgs
-    - sgs
-    - sgs
+    - homogenous
+    - homogenous
     means:
     - 10.0
-    - 1.0
-    - 0.1
+    - 5.0
+    - 3.0
     name: K
     vmax: 13
     vmin: 0.05
@@ -312,41 +226,18 @@ properties:
       beta: !!python/object/apply:numpy.core.multiarray.scalar
       - *id001
       - !!binary |
-        exSuR+F6pD8=
+        exSuR+F6tD8=
       elem:
       - !!python/tuple
         - gaussian
         - r:
-          - 5000.0
+          - 36366.666666666664
           - 100.0
-          - 100.0
-          w: 0.04
+          - 200.0
+          w: 0.08
       gamma: 0
-    - alpha: 0.0
-      beta: 0.04
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 5000.0
-          - 100.0
-          - 100.0
-          w: 0.04
-      gamma: 0.0
-    - alpha: 0
-      beta: !!python/object/apply:numpy.core.multiarray.scalar
-      - *id001
-      - !!binary |
-        exSuR+F6pD8=
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 10000.0
-          - 100.0
-          - 100.0
-          w: 0.04
-      gamma: 0
+    - null
+    - null
     def_mean: 1
     facies:
     - sand
@@ -354,8 +245,8 @@ properties:
     - clay
     int_method:
     - sgs
-    - sgs
-    - sgs
+    - homogenous
+    - homogenous
     means:
     - 0.3
     - 0.45
@@ -366,4 +257,4 @@ properties:
 seed: 777000000
 surfaces_computed: 1
 verbose: 1
-ws: H:\My Drive\OPTIMAL\Project work\optimal\surrogate_sections\ArchPy_mods\ap_sm_10
+ws: /home/ariel2/Projects/optimal/surrogate_sections/ArchPy_mods/ap_sm_10
