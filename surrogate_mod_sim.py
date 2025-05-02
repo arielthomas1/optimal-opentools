@@ -61,7 +61,7 @@ fig_fol='/home/ariel2/Projects/optimal/surrogate_sections/figures'
 #%%
 
 #user-defined number of models to be retrieved
-num_models=20
+num_models=5
 mod_dict= {}
 for i in range(1, num_models + 1):
     mod_id =  f'sm_{i}'  # Generate model ID
@@ -74,7 +74,7 @@ for i in range(1, num_models + 1):
 # mod_loc=os.path.join(mod_fol, "ap_{}".format(mod[i]))
 # mod_obj=import_project(mod[i],mod_loc)
 
-for i in range(10, num_models + 1):
+for i in range(1, num_models + 1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -315,7 +315,7 @@ for i in range(10, num_models + 1):
     #% DIS package
     #************************
     perlen = (365.25*9999)*np.ones_like(sp_sealevel) #an array filled with values of the length of each stress period in days.
-    nstp = 100*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
+    nstp = 400*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
     nper = len(sp_sealevel) # number of stress periods
     
     dis = fp.modflow.ModflowDis(swt, nlay, nrow, ncol, nper = nper, delr = delr, delc = delc, top = top_elev,
@@ -414,7 +414,7 @@ for i in range(10, num_models + 1):
     '''shape of rch array should be (nper,ncol)'''
     ''' Glacial regions cna expect 2 to 10 x recharge relative to others due to glacial melt'''
     #TODO
-    rch_val = 0.0025
+    rch_val = 0.00025
     rch_arr = np.zeros((ibound_sm.shape[1],ibound_sm.shape[2]))
     drn_input_lst = []
     rch_input_lst = []

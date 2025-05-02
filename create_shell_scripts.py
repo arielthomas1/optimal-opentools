@@ -19,7 +19,7 @@ import os
 base_mod_dir = "/home/ariel2/Projects/optimal_mod_runs"
 base_mod_fol = "sm_"  # Base folder name
 base_mod_id = "sm_"    # Base model ID
-num_models = 25  # Change this to the total number of models you want to run
+num_models = 5  # Change this to the total number of models you want to run
 nprocs = 1  # Adjust this to your system's needs
 imod_wq_bin = "/home/ariel2/imodwq/seawat/bin/seawat-svn390"
 intel_oneapi_env = "/opt/intel/oneapi/setvars.sh"

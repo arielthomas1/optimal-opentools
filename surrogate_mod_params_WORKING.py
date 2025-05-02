@@ -303,13 +303,13 @@ extracted from the distributions visualized in the previous step'''
 #TODO Develop a methodology to QC the shape of the model create and cast out unrealistic creations
 
 # Set the total number of surrogate models to generate
-num_models = 20
+num_models = 5
 
 # Dictionary to store seeds for reproducibility
 seeds_dict = {}
 
 # Loop to create surrogate models
-for i in range(10, num_models + 1):
+for i in range(1, num_models + 1):
     SEED = np.random.randint(2569)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'
@@ -472,7 +472,7 @@ df_ud=pd.DataFrame(columns=ud_header)
 mod_dict = {}
 
 # Loop to generate multiple ArchPy objects
-for i in range(10, num_models + 1):
+for i in range(1, num_models + 1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -773,7 +773,7 @@ for i in range(10, num_models + 1):
     cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/2,100,200]})],
                                  alpha=0,beta=slope_angle,gamma=0)
     mean_vals_por=[0.3,0.45,0.6]
-    mean_vals_k=[10,5,3]
+    mean_vals_k=[6,1,0.1]
     list_facies=[sand,silt,clay]
 
     # STOCHASTIC

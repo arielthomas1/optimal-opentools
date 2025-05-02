@@ -431,6 +431,48 @@ def clean_tec_file(input_file, search_string='ZONE T='):
 
     return output_file
 
+def clean_tec_file2(input_file, search_string='ZONE T='):
+    """
+    This function cleans a .tec file by removing header lines, 'VARIABLES=' line,
+    and the last lines starting with 'TEXT' and the line after.
+
+    Args:
+        input_file: The path to the .tec file.
+        search_string: The string to search for to skip lines.
+    Returns:
+        The name of the cleaned output file.
+    """
+    # Create output filename
+    base, ext = os.path.splitext(input_file)
+    output_file = f"{base}_cleaned{ext}"
+
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as infile, \
+            open(output_file, 'w', encoding='utf-8') as outfile:
+        lines = infile.readlines()  # Read all lines into a list
+        
+        # Process lines, skipping unwanted ones
+        cleaned_lines = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if search_string not in line:
+                if 'VARIABLES=' in line:
+                    cleaned_line = line.replace('VARIABLES=', '').lstrip()
+                    cleaned_lines.append(cleaned_line)
+                else:
+                    cleaned_lines.append(line)
+            i += 1
+
+        # Remove the last lines starting with "TEXT" and the line after
+        while cleaned_lines and cleaned_lines[-1].startswith("TEXT"):
+            cleaned_lines.pop()
+            
+        # Write the cleaned lines to the output file
+        outfile.writelines(cleaned_lines)
+
+    return output_file
+
+
 def print_last_lines(filename, num_lines=10):
     """
     Prints the last N lines of a file.
