@@ -42,7 +42,7 @@ ibound_arr = np.load(ibound_arr_dir, allow_pickle = True)
 
 #   get the nlay, nrow and ncol values
 nlay, nrow, ncol = ibound_arr.shape[0], ibound_arr.shape[1], ibound_arr.shape[2]
-sp=14 #Specifiy the stress period to be plotted
+sp=22 #Specifiy the stress period to be plotted
 
 var_names=['X','Y','Z','HEAD','CONC','VX','VY','VZ']
 results=os.path.join(mod_dir, f"results_sp{sp}_cleaned.tec")
@@ -65,7 +65,7 @@ nz = len(np.unique(z))
 conc_2d = conc.reshape((nz, nx))  # Reshape into a 2D array (Z x X)
 head_2d = head.reshape((nz, nx))
 conc_2d =np.where(conc_2d>36,np.nan,conc_2d)
-head_2d =np.where(head_2d<-100,np.nan,head_2d)
+head_2d =np.where(head_2d<-999,np.nan,head_2d)
 
 # Create the plot
 top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
@@ -81,7 +81,7 @@ plt.ylabel('Elevation (m)')
 #plt.ylim(z.max(), z.min())
 # Set yticks and yticklabels to match z_vals
 plt.yticks(z_vals, labels=[f"{val:.1f}" for val in z_vals]) 
-plt.title('Salinity Profile  - {mod_id} - sp {sp}')
+plt.title(f'Salinity Profile  - {mod_id} - sp {sp}')
 #plt.savefig(f"{os.path.splitext(filename)[0]}_conc_profile.png")  # Save the plot
 plt.show()
 
