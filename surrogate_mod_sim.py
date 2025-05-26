@@ -51,7 +51,7 @@ mod_fol='/home/ariel2/Projects/optimal/surrogate_sections/ArchPy_mods'
 mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
 output_data='/home/ariel2/Projects/optimal/surrogate_sections'
 
-modflow_ws='/home/ariel2/Projects/optimal_mod_runs'
+modflow_ws='/data/optimal/mod_files' # Formerly /home/ariel2/Projects/optimal_mod_runs'
 imod_path='/home/ariel2/software/bin/seawat_svn387'
 #imod6_path=
 seawat_exe='/home/ariel2/software/swtv4'
@@ -120,7 +120,7 @@ for i in range(1, num_models + 1):
     fig.suptitle(f"Surrogate model: {mod_id}", fontsize=18)
     
     #Saving Figure
-    fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
+    #fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 
     # Reading sealevel data and plotting 
 
@@ -160,7 +160,7 @@ for i in range(1, num_models + 1):
     #% Create the basic MODFLOW model structure
 
 #MOdflow model grid setup
-    
+   
     #retrieving model name from dict
     sm=mod_dict[mod_id]
     
@@ -175,6 +175,7 @@ for i in range(1, num_models + 1):
     #Creating ibound array with all cells set to zero. 
     #cells will be activated in the model properties block
     ibound_sm=np.zeros((nlay,nrow,ncol))
+    #Truncating the ibound array at 1km depth for more efficient simulation time. 
     ibound_sm.shape
 
      #%
@@ -194,7 +195,8 @@ for i in range(1, num_models + 1):
     por_arr=np.flipud(por_arr)
     
     ibound_sm = np.where(~np.isnan(por_arr), 1, ibound_sm)
-    
+    ibound_sm[100:nlay,:,:]=0
+
     print("Shape of ibound_sm after update:", ibound_sm.shape)
     
     # Reshape the porosity array to 2D
@@ -219,7 +221,7 @@ for i in range(1, num_models + 1):
     
     # Show the plot
     plt.show()
-    fig.savefig(f'{fig_fol}/porosity_{mod_id}.jpg',dpi=450, bbox_inches='tight')
+   # fig.savefig(f'{fig_fol}/porosity_{mod_id}.jpg',dpi=450, bbox_inches='tight')
     # Reshape the porosity array to 2D
     hk_2d = hk_arr.squeeze()
     
@@ -285,7 +287,7 @@ for i in range(1, num_models + 1):
     
     # Show the plot
     plt.show()
-    fig.savefig('{}/figures/{}_ibound.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
+    #fig.savefig('{}/figures/{}_ibound.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 
     #% Initial conditions and stress periods
 

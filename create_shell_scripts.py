@@ -16,14 +16,15 @@ Created on Wed Apr 23 08:34:32 2025
 import os
 
 # --- Configuration ---
-base_mod_dir = "/home/ariel2/Projects/optimal_mod_runs"
+base_mod_dir = "/data/optimal/mod_files" #/home/ariel2/Projects/optimal_mod_runs
 base_mod_fol = "sm_"  # Base folder name
 base_mod_id = "sm_"    # Base model ID
 num_models = 5  # Change this to the total number of models you want to run
 nprocs = 1  # Adjust this to your system's needs
 imod_wq_bin = "/home/ariel2/imodwq/seawat/bin/seawat-svn390"
 intel_oneapi_env = "/opt/intel/oneapi/setvars.sh"
-output_base_dir = os.path.join(base_mod_dir, "outputs")
+log_dir = "/data/optimal/mod_logs"
+
 
 # --- Function to generate a single shell script ---
 def create_shell_script(model_num):
@@ -31,7 +32,7 @@ def create_shell_script(model_num):
     mod_id = f"{base_mod_id}{model_num}"
     mod_dir = os.path.join(base_mod_dir, mod_fol)
     namfile = os.path.join(mod_dir, f"{mod_id}.nam_swt")
-    output_dir = os.path.join(output_base_dir, mod_id)
+    output_dir = os.path.join(log_dir, mod_id)
     logfile = os.path.join(output_dir, f"run_$(date +%Y%m%d_%H%M%S).log")
     script_name = f"run_{mod_id}.sh"
     script_path = os.path.join(base_mod_dir, script_name)
@@ -50,7 +51,7 @@ def create_shell_script(model_num):
         f.write(f"NPROCS={nprocs}\n")
         f.write(f"NAMFILE=\"${{MOD_DIR}}/${{MOD_FOL}}/${{MOD_ID}}.nam_swt\"\n\n")
 
-        f.write(f"OUTPUT_DIR=\"{output_base_dir}/${{MOD_ID}}\"\n")
+        f.write(f"OUTPUT_DIR=\"{log_dir}/${{MOD_ID}}\"\n")
         f.write("mkdir -p \"$OUTPUT_DIR\"\n\n")
 
         f.write(f"LOGFILE=\"${{OUTPUT_DIR}}/run_$(date +%Y%m%d_%H%M%S).log\"\n")

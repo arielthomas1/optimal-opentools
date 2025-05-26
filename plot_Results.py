@@ -9,13 +9,15 @@ from matplotlib import colors
 import re
 import pandas as pd
 
-mod_id='sm_2'
-mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
-mod_dir= os.path.join(work_dir,mod_id)
+
 #%%
 df_mod_runs,completed,failed=of.check_model_runs(work_dir,5)
 
 #%% 
+
+mod_id='sm_3'
+mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
+mod_dir= os.path.join(work_dir,mod_id)
 # SPlit stress periods
 # Set path to your .tec file
 file_path =os.path.join(work_dir,mod_id,'concvelo.tec')
@@ -35,14 +37,21 @@ for i in range(1, num_per + 1):
     of.clean_tec_file2(filename)
     
 #%%
-of.print_last_lines(os.path.join(mod_dir, f"results_sp10_cleaned.tec"))
+#of.print_last_lines(os.path.join(mod_dir, f"results_sp10_cleaned.tec"))
 #%%
 ibound_arr_dir = os.path.join(mod_dir, 'ibound_arr.npy')
 ibound_arr = np.load(ibound_arr_dir, allow_pickle = True)
 
 #   get the nlay, nrow and ncol values
 nlay, nrow, ncol = ibound_arr.shape[0], ibound_arr.shape[1], ibound_arr.shape[2]
-sp=22 #Specifiy the stress period to be plotted
+sp=14 #Specifiy the stress period to be plotted´
+
+sp_sealevel=[ -27.3,  -35.9,  -83.2,  -65.3,  -87.3, -108.7, -101.3,  -77.2,
+         -3.3,  -47.2,  -33.6,  -48.4,  -33. ,  -68.6,  -82.3,  -76.9,
+        -87.3,  -90.6, -115. ,  -49. ,    0. ]
+
+sp=14 #Specifiy the stress period to be plotted´
+sl=sp_sealevel[sp-1]
 
 var_names=['X','Y','Z','HEAD','CONC','VX','VY','VZ']
 results=os.path.join(mod_dir, f"results_sp{sp}_cleaned.tec")

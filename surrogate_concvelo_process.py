@@ -28,9 +28,6 @@ import re
 matplotlib.use('agg')
 #%% Inspecting the concvelo file 
 
-
-
-
 with open("/home/ariel2/Projects/optimal_mod_runs/sm_7/concvelo.tec", "r") as f:
     for line in f:
         if "period" in line.lower():

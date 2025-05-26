@@ -23,7 +23,7 @@ import xarray as xr
 import re
 #%%
 #   the indexes are defined from the job script
-a = #int((sys.argv[1]))
+#a = #int((sys.argv[1]))
 
 sp_sealevel=[ -27.3,  -35.9,  -83.2,  -65.3,  -87.3, -108.7, -101.3,  -77.2,
          -3.3,  -47.2,  -33.6,  -48.4,  -33. ,  -68.6,  -82.3,  -76.9,
