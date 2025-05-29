@@ -384,10 +384,10 @@ for i in range(1, num_models + 1):
     #--------------
     #Defining well total depths
     td_a=top_elev+cst
-    td_b=cst +500
-    td_c=td_d=(tos-sbd)-5
+    td_b=cst +500  #arbitrary buffer
+    td_c=td_d=(tos-sbd)-5 #arbitrary buffer
     #--------------
-    #creating control wells at 5 km intervals
+    #creating control wells at 10 km intervals
     x_bhs=np.arange(0,sw,10000)
     z_bhs=np.ones_like(x_bhs)
     plt.plot(x_mod/1000, z_top,'-o', label='Top Model')      # Interpolated spline
@@ -500,33 +500,37 @@ for i in range(1, num_models + 1):
     dimensions= (nx,ny,nz)
     spacing = (sx, sy, sz)
     origin = (ox, oy, oz)
-
+    
+    #------------------------------------------------------------------
+    # MODEL GEOMETRY 
+    #------------------------------------------------------------------
    #%Creating interpolated Top and Base Surfaces 
 
     #Defining the aquifer geometries using a fixed value relative to model bounds
-    
+    inland_sect=of.read_mod_file(mod_data,mod_id, 'Inland length') #Extracting model inland length from summary file
+    sbd=of.read_mod_file(mod_data,mod_id, 'Shelf break depth') #Extracting model shelf break depth from summary file
     sw=of.read_mod_file(mod_data,mod_id, 'Shelf width') #Extracting model shelf width from summary file
-    
-    aq_len=random.randint(5000, int(sw)) # length of the aquifer
-    ob_thickness=random.randint(0,200) #thickness of the overburden layer or depth to top of aq.
+    #TODO Add cross-correlation constraints on aquifer dimensions
+    min_aq=int(inland_sect+2000) # defining a minium offshore extent for aquifer in surrogate models
+    aq_len=random.randint(min_aq, int(sw)) # length of the aquifer
+    ob_thickness=random.randint(0,250) #thickness of the overburden layer or depth to top of aq.
     aq1_thickness=random.randint(200,600) #thickness of aquifer itself
+    
     # Write the aquifer properties to the model summary file
     with open(r"{}/surrogate_mod_summary/{}.txt".format(output_data,mod_id), "a") as file:
         file.write(' Aquifer length = {} \n Overburden thickness = {} \n Aquifer1 thickness = {} \n'.format(aq_len,ob_thickness,aq1_thickness))
     file.close()
-        
-    # aq_len=sw
-    # ob_thickness=400
-    # aq1_thickness=400
-    inland_sect=of.read_mod_file(mod_data,mod_id, 'Inland length') #Extracting model inland length from summary file
-    sbd=of.read_mod_file(mod_data,mod_id, 'Shelf break depth') #Extracting model shelf break depth from summary file
+
 
     #re-creating X and Z arrays based on model realization
     x_mod = np.array([0, int(inland_sect), int(inland_sect + sw), int(mod_len)])
     z_top = np.array([top_elev, 0, -sbd, -tos])
     
     x_new = np.linspace(x_mod.min(), x_mod.max(), nx)
-    x_bhs=np.linspace(sx,sw,int(nx/100))
+    #TODO Modify the number of boreholes to correspond with the aquifer offshore extent
+    x_bhs = np.linspace(sx,sw,int(nx/100))
+    #modify the well locations according to the randomly allocated aquifer length
+    x_bhs_aquifer = x_bhs[x_bhs<=aq_len]
 
     # Create a cubic B-spline 
     spline_top = PchipInterpolator(x_mod, z_top)
@@ -536,30 +540,33 @@ for i in range(1, num_models + 1):
     z_base_new = spline_base(x_new)
 
     #Creating boreholes
-    z_bhs=spline_top(x_bhs)
-    z_unit_base=spline_base(x_bhs)
+    z_bhs=spline_top(x_bhs_aquifer)
+    z_unit_base=spline_base(x_bhs_aquifer)
     #setting the the total depth of the boreholes equal to the model domain
-    td_bhs=abs(spline_base(x_bhs)-z_bhs)
+    td_bhs=abs(spline_base(x_bhs_aquifer)-z_bhs)
     
     #Defining top of aquifer based on thickness of overburden confining layer
-    top_aq1=spline_top(x_bhs)-ob_thickness
-    bot_aq1=spline_top(x_bhs)-(ob_thickness+aq1_thickness)
+    top_aq1=spline_top(x_bhs_aquifer)-ob_thickness
+    bot_aq1=spline_top(x_bhs_aquifer)-(ob_thickness+aq1_thickness)
     
     #Defining overburden interval
-    top_ob1=spline_top(x_bhs)
+    top_ob1=spline_top(x_bhs_aquifer)
     bot_ob1=top_aq1
-    bot_sed_column=spline_base(x_bhs)
-
+    bot_sed_column=spline_base(x_bhs_aquifer)
+    
+    #------------------------------------------------------------------
+    # BOREHOLES, UNITS & FACIES
+    #------------------------------------------------------------------
 
     # Create the list of borehole names
-    borehole_names = [f"bh_{i}" for i in range(1, len(x_bhs) + 1)]
+    borehole_names = [f"bh_{i}" for i in range(1, len(x_bhs_aquifer) + 1)]
     # Ensure df_lbh is always initialized with the correct number of rows
     df_lbh = pd.DataFrame(index=range(len(borehole_names)))  
     #Fill boreholes
     df_lbh = df_lbh.assign(
         bh_ID=borehole_names,
-        bh_x=np.round(x_bhs),
-        bh_y=(sy / 2) * np.ones_like(x_bhs),
+        bh_x=np.round(x_bhs_aquifer),
+        bh_y=(sy / 2) * np.ones_like(x_bhs_aquifer),
         bh_z=np.floor(z_bhs),
         bh_depth=np.floor(td_bhs)
     )
@@ -613,17 +620,17 @@ for i in range(1, num_models + 1):
     # Fill the area between the two lines
     ax.fill_between(x_new/1000, z_top_new, z_base_new, color='orange', alpha=0.7)
     
-    plt.scatter(x_bhs/1000,z_bhs,marker='s',s=10,color='black',label='Boreholes')
-    plt.scatter(x_bhs/1000,-td_bhs,marker='s',s=10,color='black',label='Boreholes TD')
+    plt.scatter(x_bhs_aquifer/1000,z_bhs,marker='s',s=10,color='black',label='Boreholes')
+    plt.scatter(x_bhs_aquifer/1000,-td_bhs,marker='s',s=10,color='black',label='Boreholes TD')
     #Markers
     plt.scatter(x_mod/1000, z_top, marker='x', color='gray',label='Control points')  # Original control points
     plt.scatter(x_mod/1000, z_base, marker='x', color='gray')  
     #Surfaces
     plt.plot(x_new/1000, z_top_new, color='blue',label='Top model int')      # Interpolated spline
     plt.plot(x_new/1000, z_base_new, color='black',label='Base model int')      # Interpolated spline
-    plt.plot(x_bhs/1000,top_aq1,color='yellow',label= 'Aquifer 1')
-    plt.plot(x_bhs/1000,bot_aq1,color='yellow')
-    ax.fill_between(x_bhs/1000, top_aq1, bot_aq1, color='yellow', alpha=0.7)
+    plt.plot(x_bhs_aquifer/1000,top_aq1,color='yellow',label= 'Aquifer 1')
+    plt.plot(x_bhs_aquifer/1000,bot_aq1,color='yellow')
+    ax.fill_between(x_bhs_aquifer/1000, top_aq1, bot_aq1, color='yellow', alpha=0.7)
     
     plt.legend()
     plt.xlabel("Distance (km)")
@@ -634,19 +641,17 @@ for i in range(1, num_models + 1):
     fig.savefig('{}/figures/{}_geometry.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 
 
-
     # Creating top and base model arrays for input into model
     top_surf=np.array([z_top_new])
     bot_surf=np.array([z_base_new])
 #adding grid
     mod_dict[mod_id].add_grid(dimensions, spacing, origin, top=top_surf, bot=bot_surf) 
 
-
     ### COVARIANCE MODELS ####
     #Covariance model for top surface
     covmodel_er = gcm.CovModel2D(elem=[('spherical', {'w':5, 'r':[10000,100]})])
     #COvariance model for sedimentary unit
-    covmod_U=gcm.CovModel3D(elem=[('spherical', {'w':2, 'r':[10000,100,100]})],beta=slope_angle)
+    covmod_U=gcm.CovModel3D(elem=[('spherical', {'w':2, 'r':[10000,100,100]})],beta=-slope_angle)
 
 ### SURFACES ####
 
@@ -659,16 +664,16 @@ for i in range(1, num_models + 1):
     #defining top aquifer 1 base surface object
     top_aq1=ap.base.Surface(name='top_aq1',
                          dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
-                         contact='onlap')
+                         contact='erode')
 
     bot_aq1=ap.base.Surface(name='bot_aq1',
                          dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
                          contact='onlap')
 #### UNITS AND FACIES #####
     cov_mod_sand=gcm.CovModel3D(elem=[('spherical',{'w':slope_angle,'r':[10000,100,100]})],
-                                 alpha=0,beta=slope_angle,gamma=0)
+                                 alpha=0,beta=-slope_angle,gamma=0)
     cov_mod_shale=gcm.CovModel3D(elem=[('spherical',{'w':slope_angle,'r':[10000,100,100]})],
-                                 alpha=0,beta=slope_angle,gamma=0)
+                                 alpha=0,beta=-slope_angle,gamma=0)
     #defining overburden
     ob_facies={'f_method':'homogenous','f_covmodel':None}
     ob1=ap.base.Unit(name='ob1',
@@ -764,46 +769,49 @@ for i in range(1, num_models + 1):
     '''Porosity typically exhibits a gaussian normal distribution so this type
     of model will be assigned.'''
     
-    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/3,100,200]})],
-                                 alpha=0,beta=slope_angle,gamma=0)
+    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/3,100,aq1_thickness/2]}),
+                                     ('nugget', {'w':0.2}) ],
+                                 alpha=0,beta=0,gamma=-slope_angle)
     
-    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/3,100,200]})],
-                                 alpha=0,beta=slope_angle,gamma=0)
+    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/3,100,aq1_thickness/2]}),
+                                   ('nugget', {'w':0.2}) ],
+                                 alpha=0,beta=0,gamma=-slope_angle)
     
-    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':slope_angle,'r':[nx*sx/2,100,200]})],
-                                 alpha=0,beta=slope_angle,gamma=0)
+    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/2,100,aq1_thickness/2]}),
+                                      ('nugget', {'w':0.2}) ],
+                                 alpha=0,beta=0,gamma=-slope_angle)
     mean_vals_por=[0.3,0.45,0.6]
-    mean_vals_k=[6,1,0.1]
+    mean_vals_k=[5,1,0.1]
     list_facies=[sand,silt,clay]
 
-    # STOCHASTIC
+     # STOCHASTIC
+    por=ap.base.Prop(name="Por",facies=list_facies,
+                     covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
+                     means=mean_vals_por,
+                     int_method="sgs",
+                     vmin=0.29,
+                     vmax=0.61)
+    
+    hyd_con=ap.base.Prop(name='K',facies=list_facies,
+                         covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
+                         means=mean_vals_k,
+                         int_method='sgs',
+                         vmin=0.1,
+                         vmax=6)
+    # # HOMOEGENOUS
     # por=ap.base.Prop(name="Por",facies=list_facies,
-    #                  covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
+    #                  covmodels=[cov_mod_por,None,None],
     #                  means=mean_vals_por,
-    #                  int_method="sgs",
+    #                  int_method=["sgs","homogenous","homogenous"],
     #                  vmin=0.20,
     #                  vmax=0.65)
     
     # hyd_con=ap.base.Prop(name='K',facies=list_facies,
-    #                      covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
+    #                      covmodels=[cov_mod_k,None,None],
     #                      means=mean_vals_k,
-    #                      int_method='sgs',
-    #                      vmin=0.05,
-    #                      vmax=13)
-    # HOMOEGENOUS
-    por=ap.base.Prop(name="Por",facies=list_facies,
-                     covmodels=[cov_mod_por,None,None],
-                     means=mean_vals_por,
-                     int_method=["sgs","homogenous","homogenous"],
-                     vmin=0.20,
-                     vmax=0.65)
-    
-    hyd_con=ap.base.Prop(name='K',facies=list_facies,
-                         covmodels=[cov_mod_k,None,None],
-                         means=mean_vals_k,
-                         int_method=["sgs","homogenous","homogenous"],
-                         vmin=0.05,
-                         vmax=13)
+    #                      int_method=["sgs","homogenous","homogenous"],
+    #                      vmin=0.1,
+    #                      vmax=5)
 
     #Adding porosity to model object'
     mod_dict[mod_id].add_prop(por)
@@ -835,6 +843,52 @@ for i in range(1, num_models + 1):
 
     ap.inputs.save_project(mod_dict[mod_id])
     
+
+
+
+    # Plotting stuff
+    #mod_id='sm_1'
+    por_facies1=mod_dict[mod_id].get_prop('Por')[0,0,0,:,0,:]
+    comp_facies1=of.apply_porosity_compaction(mod_dict, mod_id, -0.0005).squeeze()
+    strati=mod_dict[mod_id].get_units_domains_realizations()[0,:,0,:]
+    flow_par=mod_dict[mod_id].get_prop('K')[0,0,0,:,0,:]
+    # Define a shared color scale ignoring NaN values
+    vmin = 0.1
+    vmax = 0.65
+    # Create subplots
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10), sharex=True, sharey=True)
+    
+    # Plot Porosity Field
+    im0 = axes[0,0].imshow(np.flipud(strati), cmap="viridis", aspect="auto", origin="upper")
+    axes[0,0].set_title("Stratigraphy")
+    
+    # Plot Hyd Conductivity
+    im1 = axes[0,1].imshow(np.flipud(flow_par), cmap="hot", aspect="auto", origin="upper")
+    axes[0,1].set_title("Hydraulic Conductivity")
+    
+    
+    axes[1,0].set_ylabel("layer")
+    im2 = axes[1,0].imshow(np.flipud(por_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
+    axes[1,0].set_title("Original Porosity Field")
+    
+    axes[1,0].set_ylabel("layer")
+    
+    # Plot Compacted Porosity Field
+    im3 = axes[1,1].imshow(np.flipud(comp_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
+    axes[1,1].set_title("Compacted Porosity Field")
+    axes[1,1].set_xlabel("column")
+    
+    # Add a shared colorbar
+    cbar = fig.colorbar(im2, ax=axes[1,1], orientation="vertical", fraction=0.05, pad=0.02)
+    cbar.set_label("Porosity (-)")
+    
+    cbar = fig.colorbar(im1, ax=axes[0,1], orientation="vertical", fraction=0.05, pad=0.02)
+    cbar.set_label("Hydraulic Conductivity (m/day)")
+    
+    #Saving Figure
+    fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=300, bbox_inches='tight')
+
+
 #%% Computing compacted Porosity field
 # mod_id='sm_10'
 # por_facies1=mod_dict[mod_id].get_prop('Por')
@@ -881,64 +935,4 @@ for i in range(1, num_models + 1):
 
 
 #Saving Figure
-
-#%%
-vex=15
-
-mod_dict[mod_id].plot_units(iu=0,v_ex=vex)
-#%%
-mod_dict[mod_id].plot_facies(iu=0,ifa=0,v_ex=vex)
-
-#%%
-mod_dict[mod_id].plot_prop(por.name,v_ex=vex)
-#%%
-mod_dict[mod_id].plot_prop(hyd_con.name,v_ex=vex)
-
-#%%
-mod_dict[mod_id].plot_bhs(log='strati',
-              v_ex=vex,
-              plot_top=True,
-              plot_bot=True)
-
-#%% Plotting stuff
-mod_id='sm_5'
-por_facies1=mod_dict[mod_id].get_prop('Por')[0,0,0,:,0,:]
-comp_facies1=of.apply_porosity_compaction(mod_dict, mod_id, -0.0005)
-strati=mod_dict[mod_id].get_units_domains_realizations()[0,:,0,:]
-flow_par=mod_dict[mod_id].get_prop('K')[0,0,0,:,0,:]
-# Define a shared color scale ignoring NaN values
-vmin = 0.1
-vmax = 0.65
-# Create subplots
-fig, axes = plt.subplots(2, 2, figsize=(15, 10), sharex=True, sharey=True)
-
-# Plot Porosity Field
-im0 = axes[0,0].imshow(np.flipud(strati), cmap="viridis", aspect="auto", origin="upper")
-axes[0,0].set_title("Stratigraphy")
-
-# Plot Hyd Conductivity
-im1 = axes[0,1].imshow(np.flipud(flow_par), cmap="hot", aspect="auto", origin="upper")
-axes[0,1].set_title("Hydraulic Conductivity")
-
-
-axes[1,0].set_ylabel("layer")
-im2 = axes[1,0].imshow(np.flipud(por_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
-axes[1,0].set_title("Original Porosity Field")
-
-axes[1,0].set_ylabel("layer")
-
-# Plot Compacted Porosity Field
-im3 = axes[1,1].imshow(np.flipud(comp_facies1), cmap="viridis", aspect="auto", origin="upper", vmin=vmin, vmax=vmax)
-axes[1,1].set_title("Compacted Porosity Field")
-axes[1,1].set_xlabel("column")
-
-# Add a shared colorbar
-cbar = fig.colorbar(im2, ax=axes[1,1], orientation="vertical", fraction=0.05, pad=0.02)
-cbar.set_label("Porosity (-)")
-
-cbar = fig.colorbar(im1, ax=axes[0,1], orientation="vertical", fraction=0.05, pad=0.02)
-cbar.set_label("Hydraulic Conductivity (m/day)")
-
-#Saving Figure
-fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 

@@ -3,7 +3,7 @@ import os
 import numpy as np
 import optimal_functions as of
 import matplotlib.pyplot as plt
-work_dir='/home/ariel2/Projects/optimal_mod_runs/'
+work_dir='/data/optimal/mod_files'
 os.chdir(work_dir)
 from matplotlib import colors
 import re
@@ -15,7 +15,7 @@ df_mod_runs,completed,failed=of.check_model_runs(work_dir,5)
 
 #%% 
 
-mod_id='sm_3'
+mod_id='sm_5'
 mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
 mod_dir= os.path.join(work_dir,mod_id)
 # SPlit stress periods
@@ -44,13 +44,16 @@ ibound_arr = np.load(ibound_arr_dir, allow_pickle = True)
 
 #   get the nlay, nrow and ncol values
 nlay, nrow, ncol = ibound_arr.shape[0], ibound_arr.shape[1], ibound_arr.shape[2]
-sp=14 #Specifiy the stress period to be plotted´
+sp=10 #Specifiy the stress period to be plotted´
 
-sp_sealevel=[ -27.3,  -35.9,  -83.2,  -65.3,  -87.3, -108.7, -101.3,  -77.2,
-         -3.3,  -47.2,  -33.6,  -48.4,  -33. ,  -68.6,  -82.3,  -76.9,
-        -87.3,  -90.6, -115. ,  -49. ,    0. ]
+sp_sealevel=[ -27.3,  -14. ,  -23.2,  -49.6,  -80.5,  -83.2,  -70.1,  -65.6,
+        -66.5,  -74. ,  -87.3, -100.7, -109. , -104. ,  -99.5, -101.3,
+       -102.2,  -93.3,  -54.4,   -5.9,   -3.3,  -16.6,  -40.4,  -46.9,
+        -41.6,  -33.6,  -38.3,  -46.6,  -48.1,  -47.8,  -33. ,  -41.6,
+        -55. ,  -81.7,  -91.8,  -82.3,  -74.3,  -73.4,  -78.7,  -82. ,
+        -87.3,  -90.6,  -90. ,  -92.4, -103.1, -115. , -109. ,  -70.7,
+        -31.8,  -10.4,    0. ]
 
-sp=14 #Specifiy the stress period to be plotted´
 sl=sp_sealevel[sp-1]
 
 var_names=['X','Y','Z','HEAD','CONC','VX','VY','VZ']
@@ -79,11 +82,12 @@ head_2d =np.where(head_2d<-999,np.nan,head_2d)
 # Create the plot
 top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
 base_elev=of.read_mod_file(mod_data,mod_id,'Toe of slope')
-z_vals=np.linspace(top_elev,-base_elev,5)
+z_vals=np.linspace(top_elev,-1000,5)
 
 plt.figure(figsize=(7,  2))
-plt.imshow(conc_2d, extent=[x.min(),x.max(), -10*z.max(), 10*z.min()], 
+plt.imshow(conc_2d[0:100,:], extent=[x.min(),x.max(), -1000, 10*z.min()], 
            aspect='auto', vmin=0, vmax=36,cmap='jet')
+plt.plot(np.arange(1,nx),sl*np.ones(nx-1),'b--',linewidth=1,label='Sealevel')  # adding sealevel position to plot
 plt.colorbar(label='CONC')
 plt.xlabel('X')
 plt.ylabel('Elevation (m)')
@@ -95,8 +99,9 @@ plt.title(f'Salinity Profile  - {mod_id} - sp {sp}')
 plt.show()
 
 plt.figure(figsize=(7,  2))
-plt.imshow(head_2d, extent=[x.min(), x.max(), -10*z.max(), 10*z.min()], 
+plt.imshow(head_2d[0:100,:], extent=[x.min(), x.max(), -1000, 10*z.min()], 
            aspect='auto',cmap='viridis')
+plt.plot(np.arange(1,nx),sl*np.ones(nx-1),'b--',linewidth=1,label='Sealevel') # adding sealevel position to plot
 plt.colorbar(label='HEAD')
 plt.xlabel('X')
 plt.ylabel('Elevation (m)')

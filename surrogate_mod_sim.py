@@ -122,8 +122,8 @@ for i in range(1, num_models + 1):
     #Saving Figure
     #fig.savefig('{}/figures/{}_summary.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 
-    # Reading sealevel data and plotting 
-
+    # # Reading sealevel data and plotting 
+    
     # #df_sl=pd.read_csv("H:/My Drive/OPTIMAL/Project work/Global_datasets/Sealevel_data_Imbrie_200k.csv")
     # df_sl=pd.read_csv('/home/ariel2/global_datasets/Sealevel_data_Imbrie_200k.csv')
     # h = -15
@@ -145,16 +145,18 @@ for i in range(1, num_models + 1):
     # plt.show()
 
 
-    # Preparing sealevel data NB. Comment out, this only needed to be done once
+    # #Preparing sealevel data NB. Comment out, this only needed to be done once
     
     # # Reading dating from Imbrie et al.
-    # df_sl=pd.read_csv("H:/My Drive/OPTIMAL/Project work/Global_datasets/Sealevel_data_Imbrie_200k.csv")
+    # df_sl=pd.read_csv("/home/ariel2/global_datasets/Sealevel_data_Imbrie_200k.csv")
     # #convertig to np array format
     # sl_arr=df_sl.to_numpy()
     # #resampling data at 10,000 year intervals 
-    # sl_10k_sp = sl_arr[::5, :]
+    # sl_10k_sp = sl_arr[::5, :] # 10000 year intervals
+    # sl_4k_sp = sl_arr[::2,:] # 4000 year intervals
     # # formating sea level array for time stepping
     # sp_sealevels=sl_10k_sp[:,2][::-1].round(1)
+    # sp_sealevels_4k=sl_4k_sp[:,2][::-1].round(1)
 
 
     #% Create the basic MODFLOW model structure
@@ -290,13 +292,20 @@ for i in range(1, num_models + 1):
     #fig.savefig('{}/figures/{}_ibound.png'.format(output_data,mod_id), dpi=450, bbox_inches='tight')
 
     #% Initial conditions and stress periods
-
+    sp_len=3999
     # RSL at 10ka intervals over the past 2 glacial-interglacial cycles.
-    sp_sealevel=[ -27.3,  -35.9,  -83.2,  -65.3,  -87.3, -108.7, -101.3,  -77.2,
-             -3.3,  -47.2,  -33.6,  -48.4,  -33. ,  -68.6,  -82.3,  -76.9,
-            -87.3,  -90.6, -115. ,  -49. ,    0. ]
+    # sp_sealevel=[ -27.3,  -35.9,  -83.2,  -65.3,  -87.3, -108.7, -101.3,  -77.2,
+    #          -3.3,  -47.2,  -33.6,  -48.4,  -33. ,  -68.6,  -82.3,  -76.9,
+    #         -87.3,  -90.6, -115. ,  -49. ,    0. ]
+    sp_sealevel=[ -27.3,  -14. ,  -23.2,  -49.6,  -80.5,  -83.2,  -70.1,  -65.6,
+            -66.5,  -74. ,  -87.3, -100.7, -109. , -104. ,  -99.5, -101.3,
+           -102.2,  -93.3,  -54.4,   -5.9,   -3.3,  -16.6,  -40.4,  -46.9,
+            -41.6,  -33.6,  -38.3,  -46.6,  -48.1,  -47.8,  -33. ,  -41.6,
+            -55. ,  -81.7,  -91.8,  -82.3,  -74.3,  -73.4,  -78.7,  -82. ,
+            -87.3,  -90.6,  -90. ,  -92.4, -103.1, -115. , -109. ,  -70.7,
+            -31.8,  -10.4,    0. ]
     # 1D array of stress period duraction: 10ka
-    sp_time = 9999*np.ones_like(sp_sealevel)
+    sp_time = sp_len*np.ones_like(sp_sealevel)
     
     # model name and folder structure
     model_dir = os.path.join(modflow_ws, mod_id)
@@ -316,8 +325,8 @@ for i in range(1, num_models + 1):
     #************************
     #% DIS package
     #************************
-    perlen = (365.25*9999)*np.ones_like(sp_sealevel) #an array filled with values of the length of each stress period in days.
-    nstp = 400*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
+    perlen = (365.25*sp_len)*np.ones_like(sp_sealevel) #an array filled with values of the length of each stress period in days.
+    nstp = 40*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
     nper = len(sp_sealevel) # number of stress periods
     
     dis = fp.modflow.ModflowDis(swt, nlay, nrow, ncol, nper = nper, delr = delr, delc = delc, top = top_elev,
