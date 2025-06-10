@@ -497,4 +497,59 @@ def print_last_lines(filename, num_lines=10):
     except Exception as e:
         print(f"An error occurred while reading the file: {e}")
 
+def split_file_by_stress_period(input_filepath):
+    """
+    Splits a text file into multiple files based on lines containing
+    '# stress period n'. Each new file is named 'ssm_sp_n.txt' and
+    is written to the same directory as the input file.
 
+    Args:
+        input_filepath (str): The path to the input text file.
+    """
+    # Ensure the input file exists
+    if not os.path.exists(input_filepath):
+        print(f"Error: Input file '{input_filepath}' not found.")
+        return
+
+    # Get the directory of the input file
+    input_directory = os.path.dirname(input_filepath)
+
+    current_output_file = None
+    stress_period_number = None
+
+    try:
+        with open(input_filepath, 'r') as infile:
+            for line in infile:
+                # Check if the line indicates a new stress period
+                match = re.search(r'# stress period (\d+)', line)
+                if match:
+                    # Extract the stress period number
+                    new_stress_period_number = int(match.group(1))
+
+                    # If there was an open file, close it before opening a new one
+                    if current_output_file:
+                        current_output_file.close()
+                        # Use os.path.basename to get just the filename for printing
+                        print(f"Closed: {os.path.basename(current_output_file.name)}")
+
+                    # Update the stress period number
+                    stress_period_number = new_stress_period_number
+
+                    # Define the new output filename, joining it with the input directory
+                    output_filename = os.path.join(input_directory, f"ssm_sp_{stress_period_number}.txt")
+
+                    # Open the new output file in write mode
+                    current_output_file = open(output_filename, 'w')
+                    print(f"Opened: {os.path.basename(output_filename)}") # Print only the filename for clarity
+
+                # Write the current line to the open output file, if any
+                if current_output_file:
+                    current_output_file.write(line)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        # Ensure the last opened file is closed
+        if current_output_file:
+            current_output_file.close()
+            print(f"Closed: {os.path.basename(current_output_file.name)}")

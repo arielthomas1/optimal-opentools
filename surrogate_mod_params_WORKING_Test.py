@@ -334,7 +334,7 @@ for i in range(1, num_models + 1):
     #--------------
     # COAST SEDIMENT THICKNESS
     #retrieving random val based on the mean and std dev from the parameters table
-    cst = of.get_random_cst(of.get_mean, of.get_sdev, 'cst', par_stats, rng)
+    cst = int(0.7*of.get_random_cst(of.get_mean, of.get_sdev, 'cst', par_stats, rng))
     #--------------
     # COASTAL UNCONSOLIDATED SEDIMENT THICKNESS - #ATE - Zamrsky
     cust = of.get_random_cust(of.get_mean, of.get_sdev, 'cust', par_stats, rng)
@@ -459,7 +459,7 @@ with open(r"{}/seeds.txt".format(output_data), "w") as file:
 
 
 #%%
-num_models=1
+num_models=5
 lbh_header = ['bh_ID', 'bh_x', 'bh_y', 'bh_z', 'bh_depth']
 fd_header=['bh_ID','facies_ID','top','bot']
 ud_header=['bh_ID','Strat','top','bot']
@@ -621,10 +621,12 @@ for i in range(1, num_models + 1):
     #Select row where bh_ID == 'bh_7' and Strat == 'aq1'
     mask = (df_ud['bh_ID'] == last_bh) & (df_ud['Strat'] == 'aq1') # Find the aquifer section of the last well 
     df_ud.loc[mask, 'Strat'] = 'ob1' #Replace it with the overburden
+    df_ud.loc[mask, 'bot']+=-50 # trying to force the erosion to truncate the layer
     
     #Update Facies dataframe
     mask = (df_fd['bh_ID'] == last_bh) & (df_fd['facies_ID'] == 'sand') # Find the aquifer section of the last well 
     df_fd.loc[mask, 'facies_ID'] = 'clay' #Replace it with the overburden
+    df_fd.loc[mask, 'bot']+=-50
     
     df_ud.to_csv(r"{}/surrogate_boreholes/bh_{}.ud".format(output_data,mod_id),index=False)
     df_fd.to_csv(r"{}/surrogate_boreholes/bh_{}.fd".format(output_data,mod_id),index=False)
@@ -664,11 +666,11 @@ for i in range(1, num_models + 1):
 
     ### COVARIANCE MODELS ####
     #Covariance model for top surface
-    covmodel_er = gcm.CovModel2D(elem=[('spherical', {'w':0.9, 'r':[20000,100]}),
+    covmodel_er = gcm.CovModel2D(elem=[('spherical', {'w':9.9, 'r':[20000,100]}),
                                        ('nugget',{'w':0.1})],
                                         alpha=-slope_angle)
     #COvariance model for sedimentary unit
-    covmod_U=gcm.CovModel3D(elem=[('spherical', {'w':0.9, 'r':[10000,100,100]}),
+    covmod_U=gcm.CovModel3D(elem=[('spherical', {'w':9.9, 'r':[10000,100,100]}),
                                   ('nugget',{'w':0.1})],
                                     gamma=-slope_angle)
 
@@ -788,49 +790,49 @@ for i in range(1, num_models + 1):
     '''Porosity typically exhibits a gaussian normal distribution so this type
     of model will be assigned.'''
     
-    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/3,100,aq1_thickness/2]}),
-                                     ('nugget', {'w':0.2}) ],
+    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':9.7,'r':[nx*sx/3,100,aq1_thickness/2]}),
+                                     ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     
-    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/3,100,aq1_thickness/2]}),
-                                   ('nugget', {'w':0.2}) ],
+    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':9.7,'r':[nx*sx/3,100,aq1_thickness/2]}),
+                                   ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     
-    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/2,100,aq1_thickness/2]}),
-                                      ('nugget', {'w':0.2}) ],
+    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':9.7,'r':[nx*sx/2,100,aq1_thickness/2]}),
+                                      ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     mean_vals_por=[0.3,0.45,0.6]
-    mean_vals_k=[5,1,0.1]
+    mean_vals_k=[4,1,0.1]
     list_facies=[sand,silt,clay]
 
      # STOCHASTIC
-    por=ap.base.Prop(name="Por",facies=list_facies,
-                     covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
-                     means=mean_vals_por,
-                     int_method="sgs",
-                     vmin=0.29,
-                     vmax=0.61)
-    
-    hyd_con=ap.base.Prop(name='K',facies=list_facies,
-                         covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
-                         means=mean_vals_k,
-                         int_method='sgs',
-                         vmin=0.1,
-                         vmax=6)
-    # # HOMOEGENOUS
     # por=ap.base.Prop(name="Por",facies=list_facies,
-    #                  covmodels=[cov_mod_por,None,None],
+    #                  covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
     #                  means=mean_vals_por,
-    #                  int_method=["sgs","homogenous","homogenous"],
-    #                  vmin=0.20,
-    #                  vmax=0.65)
+    #                  int_method="sgs",
+    #                  vmin=0.29,
+    #                  vmax=0.61)
     
     # hyd_con=ap.base.Prop(name='K',facies=list_facies,
-    #                      covmodels=[cov_mod_k,None,None],
+    #                      covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
     #                      means=mean_vals_k,
-    #                      int_method=["sgs","homogenous","homogenous"],
+    #                      int_method='sgs',
     #                      vmin=0.1,
-    #                      vmax=5)
+    #                      vmax=5.5)
+    # # HOMOEGENOUS
+    por=ap.base.Prop(name="Por",facies=list_facies,
+                     covmodels=[cov_mod_por,None,None],
+                     means=mean_vals_por,
+                     int_method=["sgs","homogenous","homogenous"],
+                     vmin=0.20,
+                     vmax=0.65)
+    
+    hyd_con=ap.base.Prop(name='K',facies=list_facies,
+                         covmodels=[cov_mod_k,None,None],
+                         means=mean_vals_k,
+                         int_method=["sgs","homogenous","homogenous"],
+                         vmin=0.1,
+                         vmax=5)
 
     #Adding porosity to model object'
     mod_dict[mod_id].add_prop(por)

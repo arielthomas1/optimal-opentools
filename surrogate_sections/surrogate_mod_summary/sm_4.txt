@@ -1,21 +1,18 @@
 Model parameter summary (m): 
  Inland distance = 10000 
  Shelf width = 130000.0 
- Slope width = 16007 
- Shelf break depth = 160.0 
- Toe of slope = 2810.0 
- Shelf gradient (deg)= 0.07 
+ Slope width = 19962 
+ Shelf break depth = 90.0 
+ Toe of slope = 2690.0 
+ Shelf gradient (deg)= 0.04 
  Inland length = 10000 
- Total model length = 156007 
- Top elevation = 230.0 
- Terrestrial sediment = 528  
- Coastal sediment = 800.0
- Unconsol. ratio = 0.125 
+ Total model length = 159962 
+ Top elevation = 130.0 
+ Terrestrial sediment = 693  
+ Coastal sediment = 1050
+ Unconsol. ratio = 0.22857142857142856 
 
 Aquifer dimsensions (m): 
- Aquifer length = 95546 
- Overburden thickness = 34 
- Aquifer1 thickness = 478 
- Aquifer length = 93119 
- Overburden thickness = 223 
- Aquifer1 thickness = 242 
+ Aquifer length = 69263 
+ Overburden thickness = 47 
+ Aquifer1 thickness = 445 

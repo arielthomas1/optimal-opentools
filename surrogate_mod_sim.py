@@ -326,7 +326,7 @@ for i in range(1, num_models + 1):
     #% DIS package
     #************************
     perlen = (365.25*sp_len)*np.ones_like(sp_sealevel) #an array filled with values of the length of each stress period in days.
-    nstp = 40*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
+    nstp = 100*np.ones_like(sp_sealevel) # number of time steps per period ca. 500 years per time step (???)
     nper = len(sp_sealevel) # number of stress periods
     
     dis = fp.modflow.ModflowDis(swt, nlay, nrow, ncol, nper = nper, delr = delr, delc = delc, top = top_elev,
@@ -362,6 +362,7 @@ for i in range(1, num_models + 1):
         ghb_input_lst = []
         chb_input_lst = []
         ssmdata = []
+        inland_head=10
         #initiating the first stress period
         sp=0 
     
@@ -382,6 +383,13 @@ for i in range(1, num_models + 1):
                                 ghb_input_lst.append([k, row, i, botm[k] + dz, cond_val])
                                 ssmdata.append([k, row, i, 0.0, itype['GHB']])
                                 icbund_sm[k, row, i] = -1
+        #Adding chb to inland boundary cells
+        for k in range(nlay):
+            cond_val = hk_arr[k, 0, 0] * 20 # (2*dz*delr)/delc
+            chb_input_lst.append([k, 0, 0, sea_level + inland_head, cond_val])
+            ssmdata.append([k, 0, 0, 0.0, itype['CHD']])
+            icbund_sm[k, 0, 0] = -1
+            
         # now check for the offshore domain and set all the cells below sea level to saltwater concentration and
         # head equal to sea level. Only in the top layer
         i=j=0
@@ -517,9 +525,9 @@ for i in range(1, num_models + 1):
 
     #   write the DSP package
     dmcoef = 0.0000864  # effective molecular diffusion coefficient [M2/D]
-    al = 1.
-    trpt = 10
-    trpv = 10
+    al = 1. # Longitudinal dispersivity
+    trpt = 0.1
+    trpv = 0.1
     dsp = fp.mt3d.Mt3dDsp(swt, al=al, trpt=trpt, trpv=trpv, dmcoef=dmcoef)
     
     #************************
@@ -542,7 +550,7 @@ for i in range(1, num_models + 1):
     #************************
 
     #   write the SSM package
-    ssm_rch_in = np.copy(rch_arr) * 0.0
+    ssm_rch_in = np.copy(rch_arr) 
     ssm_rch_all=np.broadcast_to(ssm_rch_in,(nper,ncol))
     ssm = fp.mt3d.Mt3dSsm(swt, crch=ssm_rch_in, stress_period_data=ssm_arr_in)
  
@@ -566,11 +574,11 @@ for i in range(1, num_models + 1):
         f.write(ibound_arr_sum)
     
     #   create the pksf and pkst files - change it in case the grid discretization changes
-    pksf_lines = ['ISOLVER 1', 'NPC 2', 'MXITER 300', 'RELAX .98', 'HCLOSEPKS 0.1', 'RCLOSEPKS 10.0', 'PARTOPT 0',
+    pksf_lines = ['ISOLVER 1', 'NPC 2', 'MXITER 500', 'RELAX .98', 'HCLOSEPKS 0.0001', 'RCLOSEPKS 1000', 'PARTOPT 0',
                   'PARTDATA', 'external 40 1. (free) -1', 'GNCOL {}'.format(ncol), 'GNROW {}'.format(nrow), 
                   'GDELR', '{}'.format(delr), 'GDELC', '{}'.format(delc),'NOVLAPADV 2', 'END']
-    pkst_lines = ['ISOLVER 2', 'NPC 2', 'MXITER 1500', 'INNERIT 50', 'RELAX .98', 'RCLOSEPKS 1.0E-02',
-                  'HCLOSEPKS 0.1', 'RELATIVE-L2NORM', 'END']
+    pkst_lines = ['ISOLVER 2', 'NPC 2', 'MXITER 2000', 'INNERIT 50', 'RELAX .98', 'RCLOSEPKS 1.0E-02',
+                  'HCLOSEPKS 0.001', 'RELATIVE-L2NORM', 'END']
     # 'CCLOSEPKS=0.00001'
     
     with open(os.path.join(model_dir, mod_id + '.pksf'), 'w') as f:

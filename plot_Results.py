@@ -15,7 +15,7 @@ df_mod_runs,completed,failed=of.check_model_runs(work_dir,5)
 
 #%% 
 
-mod_id='sm_5'
+mod_id='sm_3'
 mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
 mod_dir= os.path.join(work_dir,mod_id)
 # SPlit stress periods
@@ -44,9 +44,10 @@ ibound_arr = np.load(ibound_arr_dir, allow_pickle = True)
 
 #   get the nlay, nrow and ncol values
 nlay, nrow, ncol = ibound_arr.shape[0], ibound_arr.shape[1], ibound_arr.shape[2]
-sp=10 #Specifiy the stress period to be plotted´
 
-sp_sealevel=[ -27.3,  -14. ,  -23.2,  -49.6,  -80.5,  -83.2,  -70.1,  -65.6,
+for sp in range(2,num_per+1,2):
+
+    sp_sealevel=[ -27.3,  -14. ,  -23.2,  -49.6,  -80.5,  -83.2,  -70.1,  -65.6,
         -66.5,  -74. ,  -87.3, -100.7, -109. , -104. ,  -99.5, -101.3,
        -102.2,  -93.3,  -54.4,   -5.9,   -3.3,  -16.6,  -40.4,  -46.9,
         -41.6,  -33.6,  -38.3,  -46.6,  -48.1,  -47.8,  -33. ,  -41.6,
@@ -54,66 +55,64 @@ sp_sealevel=[ -27.3,  -14. ,  -23.2,  -49.6,  -80.5,  -83.2,  -70.1,  -65.6,
         -87.3,  -90.6,  -90. ,  -92.4, -103.1, -115. , -109. ,  -70.7,
         -31.8,  -10.4,    0. ]
 
-sl=sp_sealevel[sp-1]
+    sl=sp_sealevel[sp-1] #get the corresponding sealevel from the list
 
-var_names=['X','Y','Z','HEAD','CONC','VX','VY','VZ']
-results=os.path.join(mod_dir, f"results_sp{sp}_cleaned.tec")
-df = pd.read_csv(results,skiprows=0,names=var_names)
-print(df.head())
+    var_names=['X','Y','Z','HEAD','CONC','VX','VY','VZ']
+    results=os.path.join(mod_dir, f"results_sp{sp}_cleaned.tec")
+    df = pd.read_csv(results,skiprows=0,names=var_names)
+    #print(df.head())
 
+    # Extract the X, Z, CONC, and HEAD columns
+    x = df['X'].values
+    z = df['Z'].values #convert to meters
+    conc = df['CONC'].values
+    head = df['HEAD'].values
 
+    # Determine the dimensions of the grid (assuming it's a regular grid)
+    nx = len(np.unique(x))
+    nz = len(np.unique(z))
 
-# Extract the X, Z, CONC, and HEAD columns
-x = df['X'].values
-z = df['Z'].values #convert to meters
-conc = df['CONC'].values
-head = df['HEAD'].values
+    # Reshape the CONC and HEAD arrays
+    conc_2d = conc.reshape((nz, nx))  # Reshape into a 2D array (Z x X)
+    head_2d = head.reshape((nz, nx))
+    conc_2d =np.where(conc_2d>36,np.nan,conc_2d)
+    head_2d =np.where(head_2d<-999,np.nan,head_2d)
 
-# Determine the dimensions of the grid (assuming it's a regular grid)
-nx = len(np.unique(x))
-nz = len(np.unique(z))
+    # extracting model geometric parameters
+    top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
+    base_elev=of.read_mod_file(mod_data,mod_id,'Toe of slope')
+    z_vals=np.linspace(top_elev,-1000,5)
+    
+    # Create the plot
+    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(7, 6), sharex=True) # Adjust figsize as needed
 
-# Reshape the CONC and HEAD arrays
-conc_2d = conc.reshape((nz, nx))  # Reshape into a 2D array (Z x X)
-head_2d = head.reshape((nz, nx))
-conc_2d =np.where(conc_2d>36,np.nan,conc_2d)
-head_2d =np.where(head_2d<-999,np.nan,head_2d)
-
-# Create the plot
-top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
-base_elev=of.read_mod_file(mod_data,mod_id,'Toe of slope')
-z_vals=np.linspace(top_elev,-1000,5)
-
-plt.figure(figsize=(7,  2))
-plt.imshow(conc_2d[0:100,:], extent=[x.min(),x.max(), -1000, 10*z.min()], 
-           aspect='auto', vmin=0, vmax=36,cmap='jet')
-plt.plot(np.arange(1,nx),sl*np.ones(nx-1),'b--',linewidth=1,label='Sealevel')  # adding sealevel position to plot
-plt.colorbar(label='CONC')
-plt.xlabel('X')
-plt.ylabel('Elevation (m)')
-#plt.ylim(z.max(), z.min())
-# Set yticks and yticklabels to match z_vals
-plt.yticks(z_vals, labels=[f"{val:.1f}" for val in z_vals]) 
-plt.title(f'Salinity Profile  - {mod_id} - sp {sp}')
-#plt.savefig(f"{os.path.splitext(filename)[0]}_conc_profile.png")  # Save the plot
-plt.show()
-
-plt.figure(figsize=(7,  2))
-plt.imshow(head_2d[0:100,:], extent=[x.min(), x.max(), -1000, 10*z.min()], 
-           aspect='auto',cmap='viridis')
-plt.plot(np.arange(1,nx),sl*np.ones(nx-1),'b--',linewidth=1,label='Sealevel') # adding sealevel position to plot
-plt.colorbar(label='HEAD')
-plt.xlabel('X')
-plt.ylabel('Elevation (m)')
-plt.yticks(z_vals, labels=[f"{val:.1f}" for val in z_vals])
-plt.title(f'HEAD Profile - {mod_id} - sp {sp}')
-#plt.ylim(z.max(), z.min())
-#plt.savefig(f"{os.path.splitext(filename)[0]}_head_profile.png")  # Save the plot
-plt.show()
-
-
-# Add a colorbar to show porosity values
-#cbar = fig.colorbar(im, ax=ax, shrink=0.6, label='Porosity')
-
-# Show the plot
-plt.show()
+    # --- Plot 1: Salinity Profile (conc_2d) ---
+    im1 = ax1.imshow(conc_2d[0:100,:], extent=[x.min(),x.max(), -1000, 10*z.min()],
+                     aspect='auto', vmin=0, vmax=36,cmap='jet')
+    ax1.plot(np.arange(1,nx),sl*np.ones(nx-1),'b--',linewidth=1,label='Sealevel') # adding sealevel position to plot
+    fig.colorbar(im1, ax=ax1, label='Salinity (g/L)')
+    ax1.set_ylabel('Elevation (m)')
+    ax1.set_yticks(z_vals)
+    ax1.set_yticklabels([f"{val:.1f}" for val in z_vals])
+    ax1.set_title(f'Salinity profile - {mod_id} | sp {sp}')
+    ax1.legend() # Display the legend for sealevel
+    
+    # --- Plot 2: HEAD Profile (head_2d) ---
+    im2 = ax2.imshow(head_2d[0:100,:], extent=[x.min(), x.max(), -1000, 10*z.min()],
+                     aspect='auto',cmap='viridis')
+    ax2.plot(np.arange(1,nx),sl*np.ones(nx-1),'b--',linewidth=1,label='Sealevel') # adding sealevel position to plot
+    fig.colorbar(im2, ax=ax2, label='Hyd. head (m)')
+    ax2.set_xlabel('Distance') # Only the bottom subplot needs an x-label
+    ax2.set_ylabel('Elevation (m)')
+    ax2.set_yticks(z_vals)
+    ax2.set_yticklabels([f"{val:.1f}" for val in z_vals])
+    ax2.set_title(f'Hyd. head profile - {mod_id} | sp {sp}')
+    ax2.legend() # Display the legend for sealevel
+    
+    # Adjust layout to prevent titles/labels from overlapping
+    plt.tight_layout()
+    
+    # Save or show the plot
+    # plt.savefig(f"{os.path.splitext(filename)[0]}_combined_profiles.png")
+    plt.show()
+                            

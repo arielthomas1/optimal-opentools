@@ -334,7 +334,7 @@ for i in range(1, num_models + 1):
     #--------------
     # COAST SEDIMENT THICKNESS
     #retrieving random val based on the mean and std dev from the parameters table
-    cst = of.get_random_cst(of.get_mean, of.get_sdev, 'cst', par_stats, rng)
+    cst = int(0.7*of.get_random_cst(of.get_mean, of.get_sdev, 'cst', par_stats, rng))
     #--------------
     # COASTAL UNCONSOLIDATED SEDIMENT THICKNESS - #ATE - Zamrsky
     cust = of.get_random_cust(of.get_mean, of.get_sdev, 'cust', par_stats, rng)
@@ -360,7 +360,7 @@ for i in range(1, num_models + 1):
     tos = of.get_tos_value(of.get_mean, of.get_sdev, 'tos', par_stats, rng)
     #--------------
     # OTHER SUPPORTING PARAMETERS
-    tst=int(0.66*cst)
+    tst=int(0.6*cst)
     slope_width=random.randint(15000, 20000) # hor. distance between shelf break and toe of slope in m
     mod_len=inland_sect+int(sw)+slope_width # Defining the simulation grid size. 
     unconsol_ratio=cust/cst
@@ -470,7 +470,7 @@ df_ud=pd.DataFrame(columns=ud_header)
 
 # Initialize dictionary to store ArchPy model objects
 mod_dict = {}
-
+num_models=1
 # Loop to generate multiple ArchPy objects
 for i in range(1, num_models + 1):
     SEED = np.random.randint(239)
@@ -658,7 +658,7 @@ for i in range(1, num_models + 1):
     #defining top model surface objects
     top=ap.base.Surface(name='top_mod',
                          dic_surf={'N_transfo': False, 'covmodel': covmodel_er, 'int_method': 'grf_ineq'},
-                         contact='onlap')
+                         contact='erode')
 
 
     #defining top aquifer 1 base surface object
@@ -769,19 +769,19 @@ for i in range(1, num_models + 1):
     '''Porosity typically exhibits a gaussian normal distribution so this type
     of model will be assigned.'''
     
-    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/3,100,aq1_thickness/2]}),
-                                     ('nugget', {'w':0.2}) ],
+    cov_mod_por=gcm.CovModel3D(elem=[('gaussian',{'w':9.7,'r':[nx*sx/3,100,aq1_thickness/2]}),
+                                     ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     
-    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/3,100,aq1_thickness/2]}),
-                                   ('nugget', {'w':0.2}) ],
+    cov_mod_k=gcm.CovModel3D(elem=[('gaussian',{'w':9.7,'r':[nx*sx/3,100,aq1_thickness/2]}),
+                                   ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     
-    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':9.8,'r':[nx*sx/2,100,aq1_thickness/2]}),
-                                      ('nugget', {'w':0.2}) ],
+    cov_mod_clay=gcm.CovModel3D(elem=[('gaussian',{'w':9.7,'r':[nx*sx/2,100,aq1_thickness/2]}),
+                                      ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     mean_vals_por=[0.3,0.45,0.6]
-    mean_vals_k=[5,1,0.1]
+    mean_vals_k=[4,1,0.1]
     list_facies=[sand,silt,clay]
 
      # STOCHASTIC
@@ -797,7 +797,7 @@ for i in range(1, num_models + 1):
                          means=mean_vals_k,
                          int_method='sgs',
                          vmin=0.1,
-                         vmax=6)
+                         vmax=0.5)
     # # HOMOEGENOUS
     # por=ap.base.Prop(name="Por",facies=list_facies,
     #                  covmodels=[cov_mod_por,None,None],
