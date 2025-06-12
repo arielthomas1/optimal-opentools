@@ -14,6 +14,7 @@ import matplotlib
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib.colors import ListedColormap, BoundaryNorm
 import geone
 import geone.covModel as gcm
 import geone.imgplot3d as imgplt3
@@ -74,7 +75,7 @@ for i in range(1, num_models + 1):
 # mod_loc=os.path.join(mod_fol, "ap_{}".format(mod[i]))
 # mod_obj=import_project(mod[i],mod_loc)
 
-for i in range(5, num_models + 1):
+for i in range(1, num_models + 1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -249,26 +250,28 @@ for i in range(5, num_models + 1):
     
     # iBOUND QC
     # Assuming your ibound array is named 'ibound' and has shape [294, 1, 1600]
+    ibound_sm[:, :, 0][ibound_sm[:, :, 0] == 1] = -1
     ibound = ibound_sm
-    
+   
     # Reshape the array to 2D by removing the middle dimension of size 1
     ibound_2d = ibound.squeeze()[0:100,:]
     
     # Create a masked array to handle different cell types for plotting
     masked_active = np.ma.masked_where(ibound_2d != 1, ibound_2d)
     masked_inactive = np.ma.masked_where(ibound_2d != 0, ibound_2d)
-    masked_negative = np.ma.masked_where(ibound_2d >= 0, ibound_2d)
+    masked_negative = np.ma.masked_where(ibound_2d !=-1, ibound_2d)
     
     # Determine the extent of your model (assuming unit spacing for now)
     extent = [0, ibound_2d.shape[1], 8*ibound_2d.shape[0], 0] # [xmin, xmax, ymax, ymin] for imshow
     
+
     # Create the plot
     fig2, ax2 = plt.subplots()
     
     # Plot the different cell types with distinct colors
     im_active = ax2.imshow(masked_active, cmap=plt.cm.viridis, vmin=0.5, vmax=1.5, extent=extent, label='Active (1)')
     im_inactive = ax2.imshow(masked_inactive, cmap=plt.cm.gray, vmin=-0.5, vmax=0.5, extent=extent, label='Inactive (0)')
-    im_negative = ax2.imshow(masked_negative, cmap=plt.cm.autumn, vmin=-1.5, vmax=-0.5, extent=extent, label='Negative (-)')
+    im_negative = ax2.imshow(masked_negative, cmap=plt.cm.autumn, vmin=-1.5, vmax=-0.5, extent=extent, label='Constant (-)')
     
     # Add labels and titlen 
     ax2.set_xlabel('columns')
@@ -278,7 +281,7 @@ for i in range(5, num_models + 1):
     # Create custom patches for the legend
     active_patch = mpatches.Patch(color=plt.cm.viridis(0.75), label='Active (1)')
     inactive_patch = mpatches.Patch(color=plt.cm.gray(0.5), label='Inactive (0)')
-    negative_patch = mpatches.Patch(color=plt.cm.autumn(0.75), label='Negative (-1)')
+    negative_patch = mpatches.Patch(color=plt.cm.autumn(0.75), label='Constant (-1)')
     
     # Add the legend
     #ax2.legend(handles=[active_patch, inactive_patch, negative_patch])
@@ -344,7 +347,7 @@ for i in range(5, num_models + 1):
     vk_arr = 0.1*hk_arr 
     lpf = fp.modflow.ModflowLpf(swt, laytyp = 0, hk = hk_arr, vka = vk_arr, ipakcb = 1)
 
-#%%
+
     #************************
 
     # BOUNDARY CONDITIONS
@@ -368,41 +371,31 @@ for i in range(5, num_models + 1):
     
         # the inland part on the edges of the active model domain will be assigned the topographical head
         # for each column check the first active cell - and if it is above sea level then assign fresh head
-        
-        row_idx = [0, nrow - 1]
+        row=0
+        lay_idx = [0, nlay - 1]
         for i in range(ncol):
             #   select the active cells only
-            for row in row_idx:
-                col_cells = [t for t in ibound_sm[:, row, i].tolist() if t == 1]
-                #%%
-                if len(col_cells) > 0:
-                    lay_idx = ibound_sm[:, row, i].tolist().index(1)
-                    if ibound_sm[lay_idx, row, i] == 1 and botm[lay_idx] + dz >= sea_level:
-                        for k in range(nlay):
-                            if botm[k] + dz >= sea_level:
-                                cond_val = hk_arr[k, row, i] * dz * 1000
-                                ghb_input_lst.append([k, row, i, botm[k] + dz, cond_val])
-                                ssmdata.append([k, row, i, 0.0, itype['GHB']])
-                                icbund_sm[k, row, i] = -1
+                col_cells = [lay for lay in range(nlay) if ibound_sm[lay, row, i] == 1.0]
+                if len(col_cells) > 0: 
+                    lay_idx = ibound_sm[:, row, i].tolist().index(1) #returns the first index in the column where ibound is 1
+                    if ibound_sm[lay_idx, row, i] == 1.0 and botm[lay_idx] + dz >= sea_level:
+                        cond_val = vk_arr[lay_idx, row, i]*1000 #i.e (delc * delr) / dz
+                        ghb_input_lst.append([lay_idx, row, i, botm[lay_idx] + dz, cond_val])
+                        ssmdata.append([lay_idx, row, i, 0.0, itype['GHB']])
+                    if ibound_sm[lay_idx, row, i] == 1.0 and botm[lay_idx] + dz < sea_level:
+                        cond_val = vk_arr[lay_idx, row, i]*1000 # #i.e (delc * delr) / dz
+                        ghb_input_lst.append([lay_idx, row, i, 0.0, cond_val]) #the GHB head is what the boundary water level is, i.e., 0.0 m.
+                        ssmdata.append([lay_idx, row, i, 35.0, itype['GHB']])
         #Adding chb to inland boundary cells
         for k in range(nlay):
-            cond_val = hk_arr[k, 0, 0] * 20 # (2*dz*delr)/delc
-            chb_input_lst.append([k, 0, 0, sea_level + inland_head, cond_val])
-            ssmdata.append([k, 0, 0, 0.0, itype['CHD']])
-            icbund_sm[k, 0, 0] = -1
-            
+            if ibound_sm[k, row, 0] == -1.0:
+                cond_val = hk_arr[k, 0, 0] * 20 # (2*dz*delr)/delc
+                chb_input_lst.append([k, row, 0, top_elev + inland_head, cond_val])
+                ssmdata.append([k, row, 0, 0.0, itype['BAS6']])
+                
         # now check for the offshore domain and set all the cells below sea level to saltwater concentration and
         # head equal to sea level. Only in the top layer
-        i=j=0
-        for i in range(nrow):
-            for j in range(ncol):
-                lay_cells = [t for t in ibound_sm[:, i, j].tolist() if t == 1]
-                if len(lay_cells) > 0:
-                    lay_idx = ibound_sm[:, i, j].tolist().index(1)
-                    if ibound_sm[lay_idx, i, j] == 1 and botm[lay_idx] + dz < sea_level:
-                        cond_val = (vk_arr[lay_idx, i, j] * delc * delr) / dz
-                        ghb_input_lst.append([lay_idx, i, j, sea_level, cond_val])
-                        ssmdata.append([lay_idx, i, j, 35.0, itype['GHB']])
+                    
         ghb_input_all.append(ghb_input_lst)
         ssmdata_all.append(ssmdata)            
                    
@@ -416,11 +409,11 @@ for i in range(5, num_models + 1):
         ssm_arr_in[e] = ssmdata_all[e]
     
     #inspecting HB stress period data
-    for k, v in ghb_arr_in.items():
-        print(f"Stress period {k} has {len(v)} entries")
-        for i, row in enumerate(v):
-            if not isinstance(row, (list, tuple)) or len(row) != 5:
-                print(f"Invalid entry at stress period {k}, row {i}: {row}")
+    # for k, v in ghb_arr_in.items():
+    #     print(f"Stress period {k} has {len(v)} entries")
+    #     for i, row in enumerate(v):
+    #         if not isinstance(row, (list, tuple)) or len(row) != 5:
+    #             print(f"Invalid entry at stress period {k}, row {i}: {row}")
     #************************
     # GHB package
     #************************
@@ -439,19 +432,18 @@ for i in range(5, num_models + 1):
     drn_input_lst = []
     rch_input_lst = []
     #   only apply recharge to the cells above sea level, for each column find the first active layer
-    for i in range(ibound_sm.shape[1]):
-        for j in range(ibound_sm.shape[2]):
-            lay_lst = [t for t in ibound_sm[:, i, j].tolist() if t == 1]
+    for i in range(ncol):
+            lay_lst = [t for t in ibound_sm[:, row, i].tolist() if t == 1.0]
             if len(lay_lst) > 0:
-                top_act_lay = ibound_sm[:, i, j].tolist().index(1)
+                top_act_lay = ibound_sm[:, row, i].tolist().index(1)
                 top_act_elev = top_elev - top_act_lay * dz
                 #   if the top elevation of the cell is above sea level then assign recharge to it
                 if top_act_elev >= sea_level:
                     #print(top_act_elev)
-                    rch_arr[i, j] = rch_val
+                    rch_arr[row, i] = rch_val
                     #drainage
-                    cond_cell = (vk_arr[top_act_lay, i, j] * delc * delr) / dz
-                    drn_input_lst.append([int(top_act_lay), i, j, top_act_elev, cond_cell])
+                    cond_cell = (vk_arr[top_act_lay, row, i] * delc * delr) / dz
+                    drn_input_lst.append([int(top_act_lay), row, i, top_act_elev, cond_cell])
                   
     # creating a list of rch arrays equal to the length of the no of stress period.
     rch_arr_in = {}
@@ -465,6 +457,11 @@ for i in range(5, num_models + 1):
             drn_arr_in[c] = drn_input_lst
         drn = fp.modflow.ModflowDrn(swt, ipakcb=1, stress_period_data=drn_arr_in)
 
+    #************************
+    # CHD package
+    #************************
+    
+    
     #************************
 
     # OUTPUT CONTROL
