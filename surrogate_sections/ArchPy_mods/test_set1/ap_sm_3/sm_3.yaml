@@ -42,19 +42,22 @@ Units:
     name: aq1
     order: 2
     surface:
-      contact: onlap
+      contact: erode
       dic_surf:
         N_transfo: false
         bandwidth_mult: 1
         covmodel:
-          alpha: 0.0
+          alpha: -0.05
           elem:
           - !!python/tuple
             - spherical
             - r:
-              - 10000.0
+              - 20000.0
               - 100.0
-              w: 5.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
         int_method: grf_ineq
         tau: 0
       name: top_aq1
@@ -69,19 +72,22 @@ Units:
     name: ob1
     order: 1
     surface:
-      contact: onlap
+      contact: erode
       dic_surf:
         N_transfo: false
         bandwidth_mult: 1
         covmodel:
-          alpha: 0.0
+          alpha: -0.05
           elem:
           - !!python/tuple
             - spherical
             - r:
-              - 10000.0
+              - 20000.0
               - 100.0
-              w: 5.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
         int_method: grf_ineq
         tau: 0
       name: top_mod
@@ -96,19 +102,22 @@ Units:
     name: sed_col
     order: 3
     surface:
-      contact: onlap
+      contact: erode
       dic_surf:
         N_transfo: false
         bandwidth_mult: 1
         covmodel:
-          alpha: 0.0
+          alpha: -0.05
           elem:
           - !!python/tuple
             - spherical
             - r:
-              - 10000.0
+              - 20000.0
               - 100.0
-              w: 5.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
         int_method: grf_ineq
         tau: 0
       name: bot_aq1
@@ -125,19 +134,22 @@ Units:
     name: shelf_lyr
     order: 1
     surface:
-      contact: onlap
+      contact: erode
       dic_surf:
         N_transfo: false
         bandwidth_mult: 1
         covmodel:
-          alpha: 0.0
+          alpha: -0.05
           elem:
           - !!python/tuple
             - spherical
             - r:
-              - 10000.0
+              - 20000.0
               - 100.0
-              w: 5.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
         int_method: grf_ineq
         tau: 0
       name: top_mod
@@ -152,14 +164,14 @@ facies_computed: 1
 grid:
   bot: sm_3.bot
   dimensions: !!python/tuple
-  - 1576
+  - 1369
   - 1
-  - 278
+  - 250
   mask: sm_3.msk
   origin: !!python/tuple
   - 0.0
   - 0.0
-  - -2710.0
+  - -2400.0
   rotation_angle: 0
   spacing: !!python/tuple
   - 100.0
@@ -181,13 +193,13 @@ properties:
       - !!python/tuple
         - gaussian
         - r:
-          - 52533.333333333336
+          - 45633.333333333336
           - 100.0
-          - 245.0
-          w: 9.8
+          - 226.5
+          w: 9.7
       - !!python/tuple
         - nugget
-        - w: 0.2
+        - w: 0.3
       gamma: !!python/object/apply:numpy.core.multiarray.scalar
       - &id001 !!python/object/apply:numpy.dtype
         args:
@@ -204,35 +216,9 @@ properties:
         - -1
         - 0
       - !!binary |
-        uB6F61G4rr8=
-    - alpha: 0.0
-      beta: 0.0
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 52533.333333333336
-          - 100.0
-          - 245.0
-          w: 9.8
-      - !!python/tuple
-        - nugget
-        - w: 0.2
-      gamma: -0.06
-    - alpha: 0.0
-      beta: 0.0
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 78800.0
-          - 100.0
-          - 245.0
-          w: 9.8
-      - !!python/tuple
-        - nugget
-        - w: 0.2
-      gamma: -0.06
+        mpmZmZmZqb8=
+    - null
+    - null
     def_mean: 1
     facies:
     - sand
@@ -240,14 +226,14 @@ properties:
     - clay
     int_method:
     - sgs
-    - sgs
-    - sgs
+    - homogenous
+    - homogenous
     means:
-    - 5.0
+    - 4.0
     - 1.0
     - 0.1
     name: K
-    vmax: 6
+    vmax: 5
     vmin: 0.1
   Por:
     covmodels:
@@ -257,48 +243,19 @@ properties:
       - !!python/tuple
         - gaussian
         - r:
-          - 52533.333333333336
+          - 45633.333333333336
           - 100.0
-          - 245.0
-          w: 9.8
+          - 226.5
+          w: 9.7
       - !!python/tuple
         - nugget
-        - w: 0.2
+        - w: 0.3
       gamma: !!python/object/apply:numpy.core.multiarray.scalar
       - *id001
       - !!binary |
-        uB6F61G4rr8=
-    - alpha: 0.0
-      beta: 0.0
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 52533.333333333336
-          - 100.0
-          - 245.0
-          w: 9.8
-      - !!python/tuple
-        - nugget
-        - w: 0.2
-      gamma: -0.06
-    - alpha: 0
-      beta: 0
-      elem:
-      - !!python/tuple
-        - gaussian
-        - r:
-          - 78800.0
-          - 100.0
-          - 245.0
-          w: 9.8
-      - !!python/tuple
-        - nugget
-        - w: 0.2
-      gamma: !!python/object/apply:numpy.core.multiarray.scalar
-      - *id001
-      - !!binary |
-        uB6F61G4rr8=
+        mpmZmZmZqb8=
+    - null
+    - null
     def_mean: 1
     facies:
     - sand
@@ -306,15 +263,15 @@ properties:
     - clay
     int_method:
     - sgs
-    - sgs
-    - sgs
+    - homogenous
+    - homogenous
     means:
     - 0.3
     - 0.45
     - 0.6
     name: Por
-    vmax: 0.61
-    vmin: 0.29
+    vmax: 0.65
+    vmin: 0.2
 seed: 777000000
 surfaces_computed: 1
 verbose: 1

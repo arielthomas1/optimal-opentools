@@ -62,7 +62,7 @@ fig_fol='/home/ariel2/Projects/optimal/surrogate_sections/figures'
 #%%
 
 #user-defined number of models to be retrieved
-num_models=5
+num_models=10
 mod_dict= {}
 for i in range(1, num_models + 1):
     mod_id =  f'sm_{i}'  # Generate model ID
@@ -74,8 +74,9 @@ for i in range(1, num_models + 1):
 # i=2
 # mod_loc=os.path.join(mod_fol, "ap_{}".format(mod[i]))
 # mod_obj=import_project(mod[i],mod_loc)
+num_models=3
+for i in range(3, num_models + 1):
 
-for i in range(1, num_models + 1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -169,11 +170,11 @@ for i in range(1, num_models + 1):
     
     nlay, nrow, ncol = sm.get_nz(), sm.get_ny(), sm.get_nx()
     delr, delc = sm.get_sx(), sm.get_sy()
-    z_vals=sm.get_zgc()
+    z_vals=sm.get_zg()
     dz = sm.get_sz()
     top_elev=top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
-    botm = np.arange(top_elev, np.nanmin(z_vals) - dz, -dz)[1:]   
-    botm = np.flip(np.flipud(botm), axis=0)  # flip the array to have the same orientation as the ArchPy table
+    #botm = np.arange(top_elev, np.nanmin(z_vals) - dz, -dz)#[1:]   
+    botm =(np.flipud(z_vals)-dz)[:-1]  # flip the array to have the same orientation as the ArchPy table and drops the last index since archpy uses cell centers
     print("Shape of bot elev array:", botm.shape)
     #Creating ibound array with all cells set to zero. 
     #cells will be activated in the model properties block
@@ -181,7 +182,7 @@ for i in range(1, num_models + 1):
     #Truncating the ibound array at 1km depth for more efficient simulation time. 
     ibound_sm.shape
 
-     #%
+     #%%
  
 
     # Model properties
@@ -365,7 +366,7 @@ for i in range(1, num_models + 1):
         ghb_input_lst = []
         chb_input_lst = []
         ssmdata = []
-        inland_head=10
+        inland_head=5
         #initiating the first stress period
         sp=0 
     
@@ -378,11 +379,11 @@ for i in range(1, num_models + 1):
                 col_cells = [lay for lay in range(nlay) if ibound_sm[lay, row, i] == 1.0]
                 if len(col_cells) > 0: 
                     lay_idx = ibound_sm[:, row, i].tolist().index(1) #returns the first index in the column where ibound is 1
-                    if ibound_sm[lay_idx, row, i] == 1.0 and botm[lay_idx] + dz >= sea_level:
+                    if ibound_sm[lay_idx, row, i] == 1.0 and botm[lay_idx] + dz > sea_level:
                         cond_val = vk_arr[lay_idx, row, i]*1000 #i.e (delc * delr) / dz
                         ghb_input_lst.append([lay_idx, row, i, botm[lay_idx] + dz, cond_val])
                         ssmdata.append([lay_idx, row, i, 0.0, itype['GHB']])
-                    if ibound_sm[lay_idx, row, i] == 1.0 and botm[lay_idx] + dz < sea_level:
+                    if ibound_sm[lay_idx, row, i] == 1.0 and botm[lay_idx] + dz <= sea_level:
                         cond_val = vk_arr[lay_idx, row, i]*1000 # #i.e (delc * delr) / dz
                         ghb_input_lst.append([lay_idx, row, i, 0.0, cond_val]) #the GHB head is what the boundary water level is, i.e., 0.0 m.
                         ssmdata.append([lay_idx, row, i, 35.0, itype['GHB']])

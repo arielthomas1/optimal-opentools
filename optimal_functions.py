@@ -431,10 +431,55 @@ def clean_tec_file(input_file, search_string='ZONE T='):
 
     return output_file
 
+# def clean_tec_file2(input_file, search_string='ZONE T='):
+#     """
+#     This function cleans a .tec file by removing header lines, 'VARIABLES=' line,
+#     and the last lines starting with 'TEXT' and the line after.
+
+#     Args:
+#         input_file: The path to the .tec file.
+#         search_string: The string to search for to skip lines.
+#     Returns:
+#         The name of the cleaned output file.
+#     """
+#     # Create output filename
+#     base, ext = os.path.splitext(input_file)
+#     output_file = f"{base}_cleaned{ext}"
+
+#     with open(input_file, 'r', encoding='utf-8', errors='ignore') as infile, \
+#             open(output_file, 'w', encoding='utf-8') as outfile:
+#         lines = infile.readlines()  # Read all lines into a list
+        
+#         # Process lines, skipping unwanted ones
+#         cleaned_lines = []
+#         i = 0
+#         while i < len(lines):
+#             line = lines[i]
+#             if search_string not in line:
+#                 if 'VARIABLES=' in line:
+#                     cleaned_line = line.replace('VARIABLES=', '').lstrip()
+#                     cleaned_lines.append(cleaned_line)
+#                 else:
+#                     cleaned_lines.append(line)
+#             i += 1
+
+#         # Remove the last lines starting with "TEXT" and the line after
+#         while cleaned_lines and cleaned_lines[-1].startswith("TEXT"):
+#             cleaned_lines.pop()
+            
+#         # Write the cleaned lines to the output file
+#         outfile.writelines(cleaned_lines)
+
+#     return output_file
+
+
+
 def clean_tec_file2(input_file, search_string='ZONE T='):
     """
-    This function cleans a .tec file by removing header lines, 'VARIABLES=' line,
-    and the last lines starting with 'TEXT' and the line after.
+    This function cleans a .tec file by removing header lines, the entire line
+    containing 'VARIABLES=', and the last lines starting with 'TEXT' and the line after.
+    It also explicitly removes the specific header line:
+    "X", "Y", "Z" , "HEAD" , "CONC" , "VX" , "VY" , "VZ"
 
     Args:
         input_file: The path to the .tec file.
@@ -446,6 +491,9 @@ def clean_tec_file2(input_file, search_string='ZONE T='):
     base, ext = os.path.splitext(input_file)
     output_file = f"{base}_cleaned{ext}"
 
+    # Define the specific header to remove
+    problematic_header = '"X", "Y", "Z" , "HEAD" , "CONC" , "VX" , "VY" , "VZ"'
+
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as infile, \
             open(output_file, 'w', encoding='utf-8') as outfile:
         lines = infile.readlines()  # Read all lines into a list
@@ -454,17 +502,30 @@ def clean_tec_file2(input_file, search_string='ZONE T='):
         cleaned_lines = []
         i = 0
         while i < len(lines):
-            line = lines[i]
-            if search_string not in line:
-                if 'VARIABLES=' in line:
-                    cleaned_line = line.replace('VARIABLES=', '').lstrip()
-                    cleaned_lines.append(cleaned_line)
-                else:
-                    cleaned_lines.append(line)
+            line = lines[i].strip() # Use strip to remove leading/trailing whitespace for comparison
+
+            # Skip the line if it contains 'VARIABLES='
+            if 'VARIABLES=' in line:
+                i += 1
+                continue # Move to the next line immediately
+
+            # Skip the line if it's the specific problematic header
+            if line == problematic_header:
+                i += 1
+                continue # Move to the next line immediately
+
+            # Skip the line if it contains the search_string (e.g., 'ZONE T=')
+            if search_string in line:
+                i += 1
+                continue # Move to the next line immediately
+
+            # If none of the above conditions met, add the line (with its original newline character)
+            cleaned_lines.append(lines[i]) # Append the original line from 'lines' list
+
             i += 1
 
         # Remove the last lines starting with "TEXT" and the line after
-        while cleaned_lines and cleaned_lines[-1].startswith("TEXT"):
+        while cleaned_lines and cleaned_lines[-1].strip().startswith("TEXT"):
             cleaned_lines.pop()
             
         # Write the cleaned lines to the output file
@@ -553,3 +614,34 @@ def split_file_by_stress_period(input_filepath):
         if current_output_file:
             current_output_file.close()
             print(f"Closed: {os.path.basename(current_output_file.name)}")
+            
+def find_first_active(arr):
+    """
+    Returns the row index of the first occurrence of '1' in each column,
+    searching from the top (row 0). If '1' is not found in a column, -1 is returned for that column.
+
+    Args:
+        arr (np.ndarray or list of lists): A 2D array (or list of lists) where you want to find the indices.
+
+    Returns:
+        np.ndarray: A 1D array where each element is the row index of the first '1'
+                    for the corresponding column, or -1 if '1' is not found.
+    """
+    arr = np.array(arr) # Ensure it's a NumPy array
+
+    # 1. Create a boolean array where True indicates a '1'
+    is_one = (arr == 1)
+
+    # 2. Use np.argmax along axis=0 (columns) to find the first True index.
+    #    Important Note: If no True is found, np.argmax returns 0.
+    first_one_indices = np.argmax(is_one, axis=0)
+
+    # 3. Determine which columns actually contain at least one '1'.
+    #    This helps us differentiate a '1' at index 0 from no '1' found.
+    column_has_one = np.any(is_one, axis=0)
+
+    # 4. Use np.where to set -1 for columns where '1' was not found,
+    #    otherwise use the index found by argmax.
+    result = np.where(column_has_one, first_one_indices, -1)
+
+    return result
