@@ -303,7 +303,7 @@ extracted from the distributions visualized in the previous step'''
 #TODO Develop a methodology to QC the shape of the model create and cast out unrealistic creations
 
 # Set the total number of surrogate models to generate
-num_models = 10
+num_models = 5
 
 # Dictionary to store seeds for reproducibility
 seeds_dict = {}
@@ -459,7 +459,7 @@ with open(r"{}/seeds.txt".format(output_data), "w") as file:
 
 
 #%%
-num_models=10
+
 lbh_header = ['bh_ID', 'bh_x', 'bh_y', 'bh_z', 'bh_depth']
 fd_header=['bh_ID','facies_ID','top','bot']
 ud_header=['bh_ID','Strat','top','bot']

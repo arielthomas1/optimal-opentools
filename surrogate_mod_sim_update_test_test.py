@@ -33,6 +33,7 @@ from ArchPy.inputs import * #Truncated plurigaussians
 import ArchPy.ap_mf
 from ArchPy.ap_mf import archpy2modflow, array2cellids
 import flopy as fp
+from scipy.interpolate import PchipInterpolator
 
 
 # #Definig model data folder i.e. where ArchPy surrogate models are stroed
@@ -173,8 +174,7 @@ for i in range(1,num_models+1):
     dz = sm.get_sz()
     top_elev=top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
     #botm = np.arange(top_elev, np.nanmin(z_vals) - dz, -dz)#[1:]   
-    botm =(np.flipud(z_vals)-dz)[:-1]  # flip the array to have the same orientation as the ArchPy table and drops the last index since archpy uses cell centers
-    print("Shape of bot elev array:", botm.shape)
+    botm_full =(np.flipud(z_vals)-dz)[:-1]  # flip the array to have the same orientation as the ArchPy table and drops the last index since archpy uses cell centers
     #Creating ibound array with all cells set to zero. 
     #cells will be activated in the model properties block
     ibound_sm=np.zeros((nlay,nrow,ncol))
@@ -199,15 +199,29 @@ for i in range(1,num_models+1):
     
     #Defining active cells by masking the porosity array
     ibound_sm = np.where(~np.isnan(por_arr), 1, ibound_sm)
-    
+    #Find the index of the last active column
+    toe_cut_off=of.find_last_col(ibound_sm,1)
     #Calculating the topography of the model to determine the top array for dis package
-    top_arr=of.find_first_active(ibound_sm) #finding the index of the first active cell in each col
+    top_arr=of.find_first_active(ibound_sm[:,:,0:toe_cut_off]) #finding the index of the first active cell in each col
     top_elev_arr=top_elev-(top_arr*dz) #calculating the top elevation relative to top of the model
     
+    
+    cut_off_idx = np.where(botm_full == -1000)[0][0]
+    botm = botm_full[:cut_off_idx + 1].copy()    
+    print("Shape of bot elev array:", botm.shape)
+    nlay=cut_off_idx+1
+    ncol=toe_cut_off
+    #Creating ibound array with all cells set to zero. 
+    #cells will be activated in the model properties block
     #deactivating model cells below 1km
-    ibound_sm[100:nlay,:,:]=0
-
+    ibound_sm=ibound_sm[0:nlay,:,0:ncol]
+    hk_arr=hk_arr[0:nlay,:,0:ncol]
+    por_arr=por_arr[0:nlay,:,0:ncol]
+    botm=botm[0:nlay]
     print("Shape of ibound_sm after update:", ibound_sm.shape)
+    print("Shape of por array  after update:", por_arr.shape)
+    print("Shape of hk array  after update:", hk_arr.shape)
+    
     
     # Reshape the porosity array to 2D
     porosity_2d = por_arr.squeeze()
@@ -257,11 +271,11 @@ for i in range(1,num_models+1):
     
     # iBOUND QC
     # Assuming your ibound array is named 'ibound' and has shape [294, 1, 1600]
-    ibound_sm[:, :, 0][ibound_sm[:, :, 0] == 1] = -1
+    #ibound_sm[:, :, 0][ibound_sm[:, :, 0] == 1] = -1
     ibound = ibound_sm
    
     # Reshape the array to 2D by removing the middle dimension of size 1
-    ibound_2d = ibound.squeeze()[0:100,:]
+    ibound_2d = ibound.squeeze()[0:nlay,:]
     
     # Create a masked array to handle different cell types for plotting
     masked_active = np.ma.masked_where(ibound_2d != 1, ibound_2d)
@@ -327,11 +341,17 @@ for i in range(1,num_models+1):
 
 
     #Starting concentrations and hyd. heads
-
+    init_sl_idx= np.where(botm == 0)[0][0] #returns the index of the initial index of the sealevel i.e., the postion of the present day sealevel in the onshore-offshore transect. This should occur where botm array is zero
+    
     #starting concentration 
     sconc_arr = ibound_sm*35
+    #initializing model with all cells above sealevel set to freshwater saturation
+    sconc_arr[0:init_sl_idx,:,:]*=0
     #starting head
     head_arr = ibound_sm*0
+    
+
+   
     #************************
     #% DIS package
     #************************
@@ -370,10 +390,28 @@ for i in range(1,num_models+1):
     chd_arr_in = {}
     #
     itype = fp.mt3d.Mt3dSsm.itype_dict()
+    #getting the smooth top DEM for assigning drainage level
+    tos=of.read_mod_file(mod_data,mod_id, 'Toe of slope')
+    inland_sect=of.read_mod_file(mod_data,mod_id, 'Inland length') #Extracting model inland length from summary file
+    sbd=of.read_mod_file(mod_data,mod_id, 'Shelf break depth') #Extracting model shelf break depth from summary file
+    sw=of.read_mod_file(mod_data,mod_id, 'Shelf width') #Extracting model shelf width from summary file
+    mod_len=of.read_mod_file(mod_data, mod_id, 'Total model length')
     
-    #Get the index of the initial index of the sealevel i.e., the postion of the present day sealevel in the onshore-offshore transect. This should occur where botm array is zero
-    init_sl_idx= np.where(botm == 0)[0][0] #returns the index of the initial index of the sealevel i.e., the postion of the present day sealevel in the onshore-offshore transect. This should occur where botm array is zero
+    x_mod = np.array([0, int(inland_sect), int(inland_sect + sw), int(mod_len)])
+    z_top = np.array([top_elev, 0, -sbd, -tos])
+    spline_top = PchipInterpolator(x_mod, z_top)
+    x_new = np.linspace(x_mod.min(), x_mod.max(), ncol)
+    top_elev_dem = spline_top(x_new)
     
+    # # Create the plot
+    # fig, ax = plt.subplots(figsize=(6,3))
+    # plt.plot(top_elev_arr[0,:])
+    # plt.plot(top_elev_dem)
+    # plt.show()
+    # Assuming your ibound array is named 'ibound' and has shape [294, 1, 1600]
+    ibound_temp=ibound_sm.copy()
+    ibound_temp[:, :, 0][ibound_temp[:, :, 0] == 1] = -1   
+ 
     cond_damper=1 #factor to dampen the conductivity of boundary cells in case of numerical instability
     for a in range(len(sp_sealevel)):
     
@@ -386,6 +424,7 @@ for i in range(1,num_models+1):
         #recharge and drainage
         rch_arr_sp = np.zeros((ibound_sm.shape[1],ibound_sm.shape[2]))
         drn_input_lst = []
+        
         # the inland part on the edges of the active model domain will be assigned the topographical head
         # for each column check the first active cell - and if it is above sea level then assign fresh head
         row=0
@@ -402,21 +441,21 @@ for i in range(1,num_models+1):
                         #ssmdata.append([lay_idx, row, i, 0.0, itype['RCH']])
                         #recharge
                         rch_arr_sp[row, i] = rch_val
-                        #drainage
-                        drn_input_lst.append([lay_idx, row, i, top_elev_arr[row, i], cond_val]) 
+                        #drainag
+                        drn_input_lst.append([lay_idx, row, i, top_elev_dem[i], cond_val]) 
                         print(f'actual top - {actual_top_of_highest_active_cell}, top elev - {top_elev_arr[row,i]}')
                     if actual_top_of_highest_active_cell <= sea_level:
                         cond_val = cond_damper*vk_arr[lay_idx, row, i]*1000 # #i.e (delc * delr) / dz
-                        ghb_input_lst.append([lay_idx, row, i, 0.0, cond_val]) #the GHB head is what the boundary water level is, i.e., 0.0 m.
+                        ghb_input_lst.append([lay_idx, row, i, sea_level, cond_val]) #the GHB head is what the boundary water level is, i.e., 0.0 m.
                         ssmdata.append([lay_idx, row, i, 35.0, itype['GHB']])
 
         #Adding chb to inland boundary cells
         #rel_top_elev=dz*sea_level_idx #calculating the elevation of the top elevationcell relative to the new sealevel.
         for k in range(nlay):
-            if ibound_sm[k, 0, 0] == -1.0:
+            if ibound_temp[k, 0, 0] == -1.0:
                 cond_val = hk_arr[k, 0, 0] * 20 # (2*dz*delr)/delc
-                chd_input_lst.append([k, 0, 0, top_elev + inland_head, 0.5*cond_val])
-                ssmdata.append([k, row, 0, 0.0, itype['CHD']])
+                ghb_input_lst.append([k, 0, 0, top_elev, cond_val])
+                ssmdata.append([k, row, 0, 0.0, itype['GHB']])
         # Directly assign to the dictionaries for the current stress period 'a'
         rch_data[a]= rch_arr_sp.copy()  
         drn_data[a] = drn_input_lst
@@ -438,10 +477,10 @@ for i in range(1,num_models+1):
 
     rch = fp.modflow.ModflowRch(swt, nrchop = 3, ipakcb = 1, rech = rch_data)
     
-    #************************
-    # CHD package
-    #************************
-    chd = fp.modflow.ModflowChd(swt, stress_period_data=chd_arr_in) # Pass your prepared data here
+    # #************************
+    # # CHD package
+    # #************************
+    # chd = fp.modflow.ModflowChd(swt, stress_period_data=chd_arr_in) # Pass your prepared data here
 
     
     # #************************

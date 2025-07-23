@@ -645,3 +645,28 @@ def find_first_active(arr):
     result = np.where(column_has_one, first_one_indices, -1)
 
     return result
+
+
+def find_last_col(arr, value):
+    """
+    Finds the index of the last column in a 2D NumPy array that contains a specific value.
+
+    Args:
+        arr (np.ndarray): The 2D input array.
+        value (int or float): The value to search for.
+
+    Returns:
+        int: The index of the last column containing the value, or -1 if not found.
+    """
+    # 1. Check which columns contain the value (at least once)
+    # axis=0 operates column-wise. np.any checks if any value is True in that column.
+    cols_with_value = np.any(arr == value, axis=0)
+    
+    # 2. Find the indices of all columns that contain the value
+    indices = np.where(cols_with_value == True)
+    
+    # 3. If any such columns were found, return the last index
+    if indices[1].size > 0:
+        return indices[1][-1]
+    else:
+        return -1 # Return -1 if the value was not found in any column
