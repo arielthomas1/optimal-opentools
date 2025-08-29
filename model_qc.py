@@ -24,7 +24,7 @@ mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary
 os.makedirs("frames", exist_ok=True)
 #retriev model data
 mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
-mod_id='sm_2'
+mod_id='sm_1'
 top_elev=of.read_mod_file(mod_data,mod_id, 'Top elevation')
 os.chdir(f'/data/optimal/mod_files/{mod_id}')
 os.makedirs("frames", exist_ok=True)

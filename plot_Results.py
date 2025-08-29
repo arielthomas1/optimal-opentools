@@ -3,7 +3,7 @@ import os
 import numpy as np
 import optimal_functions as of
 import matplotlib.pyplot as plt
-work_dir='/data/optimal/mod_files'
+work_dir='/data/optimal/mod_files/'
 os.chdir(work_dir)
 from matplotlib import colors
 import re
@@ -15,7 +15,7 @@ df_mod_runs,completed,failed=of.check_model_runs(work_dir,5)
 
 #%% 
 
-mod_id='sm_3'
+mod_id='sm_1'
 mod_data='/home/ariel2/Projects/optimal/surrogate_sections/surrogate_mod_summary'
 mod_dir= os.path.join(work_dir,mod_id)
 #retrieve model data
@@ -148,7 +148,7 @@ Args:
 
 
     
-mod_dir='/data/optimal/mod_files/sm_5'   
+mod_dir='/data/optimal/mod_files/sm_1'   
     
 ibound_arr_dir = os.path.join(mod_dir, 'ibound_arr.npy')
 ibound_arr = np.load(ibound_arr_dir, allow_pickle = True)

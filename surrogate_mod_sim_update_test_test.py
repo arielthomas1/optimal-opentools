@@ -63,7 +63,7 @@ fig_fol='/home/ariel2/Projects/optimal/surrogate_sections/figures'
 #%%
 
 #user-defined number of models to be retrieved
-num_models=5
+num_models=10
 mod_dict= {}
 for i in range(1, num_models + 1):
     mod_id =  f'sm_{i}'  # Generate model ID
@@ -76,7 +76,7 @@ for i in range(1, num_models + 1):
 # mod_loc=os.path.join(mod_fol, "ap_{}".format(mod[i]))
 # mod_obj=import_project(mod[i],mod_loc)
 
-for i in range(1,num_models+1):
+for i in range(1,2):#num_models+1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -202,7 +202,7 @@ for i in range(1,num_models+1):
     #Find the index of the last active column
     toe_cut_off=of.find_last_col(ibound_sm,1)
     #Calculating the topography of the model to determine the top array for dis package
-    top_arr=of.find_first_active(ibound_sm[:,:,0:toe_cut_off]) #finding the index of the first active cell in each col
+    top_arr=of.find_first_active(ibound_sm[:,:,:]) #finding the index of the first active cell in each col
     top_elev_arr=top_elev-(top_arr*dz) #calculating the top elevation relative to top of the model
     
     
@@ -210,7 +210,7 @@ for i in range(1,num_models+1):
     botm = botm_full[:cut_off_idx + 1].copy()    
     print("Shape of bot elev array:", botm.shape)
     nlay=cut_off_idx+1
-    ncol=toe_cut_off
+    #ncol=toe_cut_off
     #Creating ibound array with all cells set to zero. 
     #cells will be activated in the model properties block
     #deactivating model cells below 1km
@@ -410,8 +410,10 @@ for i in range(1,num_models+1):
     # plt.show()
     # Assuming your ibound array is named 'ibound' and has shape [294, 1, 1600]
     ibound_temp=ibound_sm.copy()
-    ibound_temp[:, :, 0][ibound_temp[:, :, 0] == 1] = -1   
- 
+    ibound_temp[:, :, 0][ibound_temp[:, :, 0] == 1] = -1  
+    #parms for calculating equivalent freshwater head in subsea cells
+    rho_s=1025  #seawater reference density
+    rho_f=1000
     cond_damper=1 #factor to dampen the conductivity of boundary cells in case of numerical instability
     for a in range(len(sp_sealevel)):
     
@@ -441,12 +443,13 @@ for i in range(1,num_models+1):
                         #ssmdata.append([lay_idx, row, i, 0.0, itype['RCH']])
                         #recharge
                         rch_arr_sp[row, i] = rch_val
-                        #drainag
+                        #drainage
                         drn_input_lst.append([lay_idx, row, i, top_elev_dem[i], cond_val]) 
                         print(f'actual top - {actual_top_of_highest_active_cell}, top elev - {top_elev_arr[row,i]}')
                     if actual_top_of_highest_active_cell <= sea_level:
+                        eq_fw_head=of.calc_eq_fw_head(rho_s, rho_f, sea_level, top_elev_dem[i])
                         cond_val = cond_damper*vk_arr[lay_idx, row, i]*1000 # #i.e (delc * delr) / dz
-                        ghb_input_lst.append([lay_idx, row, i, sea_level, cond_val]) #the GHB head is what the boundary water level is, i.e., 0.0 m.
+                        ghb_input_lst.append([lay_idx, row, i, eq_fw_head, cond_val]) #the GHB head is what the boundary water level is, i.e., 0.0 m.
                         ssmdata.append([lay_idx, row, i, 35.0, itype['GHB']])
 
         #Adding chb to inland boundary cells
@@ -535,7 +538,7 @@ for i in range(1,num_models+1):
     #ADV Package
     #************************
     # write the ADV package
-    adv = fp.mt3d.Mt3dAdv(swt, mixelm=0, mxpart=2000000)
+    adv = fp.mt3d.Mt3dAdv(swt, mixelm=-1, mxpart=2000000)
     
     #************************
 
@@ -543,8 +546,8 @@ for i in range(1,num_models+1):
     #************************
 
     #   write the DSP package
-    dmcoef = 0.0000864 # effective molecular diffusion coefficient [M2/D]
-    al = 1. # Longitudinal dispersivity
+    dmcoef = 0.000000001 # 0.0000864 # effective molecular diffusion coefficient [M2/D]
+    al = 5. # Longitudinal dispersivity
     trpt = 0.1
     trpv = 0.1
     dsp = fp.mt3d.Mt3dDsp(swt, al=al, trpt=trpt, trpv=trpv, dmcoef=dmcoef)

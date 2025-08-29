@@ -303,7 +303,7 @@ extracted from the distributions visualized in the previous step'''
 #TODO Develop a methodology to QC the shape of the model create and cast out unrealistic creations
 
 # Set the total number of surrogate models to generate
-num_models = 5
+num_models = 15
 
 # Dictionary to store seeds for reproducibility
 seeds_dict = {}
@@ -458,7 +458,7 @@ with open(r"{}/seeds.txt".format(output_data), "w") as file:
         
 
 
-#%%
+#%% Creating surrogate models
 
 lbh_header = ['bh_ID', 'bh_x', 'bh_y', 'bh_z', 'bh_depth']
 fd_header=['bh_ID','facies_ID','top','bot']
@@ -472,7 +472,7 @@ df_ud=pd.DataFrame(columns=ud_header)
 mod_dict = {}
 
 # Loop to generate multiple ArchPy objects
-for i in range(1, num_models+1):
+for i in range(11, num_models+1):
     SEED = np.random.randint(239)
     rng = np.random.default_rng(SEED)
     mod_id = f'sm_{i}'  # Generate model ID
@@ -867,37 +867,37 @@ for i in range(1, num_models+1):
                                       ('nugget', {'w':0.3}) ],
                                  alpha=0,beta=0,gamma=-slope_angle)
     mean_vals_por=[0.3,0.45,0.6]
-    mean_vals_k=[5,1,0.1]
+    mean_vals_k=[15,1,0.01]
     list_facies=[sand,silt,clay]
 
      # STOCHASTIC
-    # por=ap.base.Prop(name="Por",facies=list_facies,
-    #                  covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
-    #                  means=mean_vals_por,
-    #                  int_method="sgs",
-    #                  vmin=0.29,
-    #                  vmax=0.61)
-    
-    # hyd_con=ap.base.Prop(name='K',facies=list_facies,
-    #                      covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
-    #                      means=mean_vals_k,
-    #                      int_method='sgs',
-    #                      vmin=0.1,
-    #                      vmax=5.5)
-    # # HOMOEGENOUS
     por=ap.base.Prop(name="Por",facies=list_facies,
-                     covmodels=[cov_mod_por,None,None],
+                     covmodels=[cov_mod_por,cov_mod_por,cov_mod_clay],
                      means=mean_vals_por,
-                     int_method=["sgs","homogenous","homogenous"],
-                     vmin=0.20,
-                     vmax=0.65)
+                     int_method="sgs",
+                     vmin=0.25,
+                     vmax=0.75)
     
     hyd_con=ap.base.Prop(name='K',facies=list_facies,
-                         covmodels=[cov_mod_k,None,None],
+                         covmodels=[cov_mod_k,cov_mod_k,cov_mod_clay],
                          means=mean_vals_k,
-                         int_method=["sgs","homogenous","homogenous"],
-                         vmin=0.1,
-                         vmax=6)
+                         int_method='sgs',
+                         vmin=0.001,
+                         vmax=20)
+    # HOMOEGENOUS
+    # por=ap.base.Prop(name="Por",facies=list_facies,
+    #                  covmodels=[cov_mod_por,None,None],
+    #                  means=mean_vals_por,
+    #                  int_method=["sgs","homogenous","homogenous"],
+    #                  vmin=0.20,
+    #                  vmax=0.65)
+    
+    # hyd_con=ap.base.Prop(name='K',facies=list_facies,
+    #                      covmodels=[cov_mod_k,None,None],
+    #                      means=mean_vals_k,
+    #                      int_method=["sgs","homogenous","homogenous"],
+    #                      vmin=0.001,
+    #                      vmax=20)
 
     #Adding porosity to model object'
     mod_dict[mod_id].add_prop(por)

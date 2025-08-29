@@ -670,3 +670,28 @@ def find_last_col(arr, value):
         return indices[1][-1]
     else:
         return -1 # Return -1 if the value was not found in any column
+    
+def calc_eq_fw_head(rho_s, rho_f, h_s, z):
+    """
+    Calculates the equivalent freshwater head.
+
+    This function is used in variable-density groundwater modeling (e.g., with SEAWAT)
+    to convert a saline water head to a standardized freshwater head, accounting for
+    the density difference and the elevation of the measurement point.
+
+    Args:
+        rho_s (float): The density of the saline water (e.g., seawater in kg/m^3).
+        rho_f (float): The density of freshwater (reference density, typically 1000 kg/m^3).
+        h_s (float): The elevation of the saline water head (e.g., sea level elevation in meters).
+        z (float): The elevation of the point of measurement (e.g., the model cell center in meters).
+
+    Returns:
+        float: The calculated equivalent freshwater head (h_f) in meters.
+    """
+    if rho_f <= 0:
+        raise ValueError("Freshwater density (rho_f) must be positive.")
+
+    # Formula to calculate equivalent freshwater head
+    h_f = (rho_s / rho_f) * h_s - ((rho_s - rho_f) / rho_f) * z
+    
+    return h_f

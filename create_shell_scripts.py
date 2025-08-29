@@ -19,7 +19,7 @@ import os
 base_mod_dir = "/data/optimal/mod_files" #/home/ariel2/Projects/optimal_mod_runs
 base_mod_fol = "sm_"  # Base folder name
 base_mod_id = "sm_"    # Base model ID
-num_models = 10  # Change this to the total number of models you want to run
+num_models = 15  # Change this to the total number of models you want to run
 nprocs = 1  # Adjust this to your system's needs
 imod_wq_bin = "/home/ariel2/imodwq/seawat/bin/seawat-svn390"
 intel_oneapi_env = "/opt/intel/oneapi/setvars.sh"
@@ -88,7 +88,7 @@ def create_shell_script(model_num):
     print(f"Generated shell script: {script_path}")
 
 # --- Main loop to generate scripts for each model ---
-for i in range(1, num_models + 1):
+for i in range(11, num_models + 1):
     create_shell_script(i)
 
 print("\nShell scripts generated successfully. You can now submit them to your HPC.")
