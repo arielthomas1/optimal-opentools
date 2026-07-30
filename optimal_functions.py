@@ -646,6 +646,36 @@ def find_first_active(arr):
 
     return result
 
+def get_pd_coast(arr):
+    """
+    Returns the row index of the first occurrence of '1' in each column,
+    searching from the top (row 0). If '1' is not found in a column, -1 is returned for that column.
+
+    Args:
+        arr (np.ndarray or list of lists): A 2D array (or list of lists) where you want to find the indices.
+
+    Returns:
+        np.ndarray: A 1D array where each element is the row index of the first '1'
+                    for the corresponding column, or -1 if '1' is not found.
+    """
+    arr = np.array(arr) # Ensure it's a NumPy array
+
+    # 1. Create a boolean array where True indicates a '1'
+    is_one = (arr == 1)
+
+    # 2. Use np.argmax along axis=0 (columns) to find the first True index.
+    #    Important Note: If no True is found, np.argmax returns 0.
+    first_one_indices = np.argmax(is_one, axis=0)
+
+    # 3. Determine which columns actually contain at least one '1'.
+    #    This helps us differentiate a '1' at index 0 from no '1' found.
+    column_has_one = np.any(is_one, axis=0)
+
+    # 4. Use np.where to set -1 for columns where '1' was not found,
+    #    otherwise use the index found by argmax.
+    result = np.where(column_has_one, first_one_indices, -1)
+
+    return result
 
 def find_last_col(arr, value):
     """

@@ -1,1 +1,0 @@
-"/opt/intel/oneapi/mpi/2021.11/bin/mpiexec.exe" -localonly 4 "/home/ariel2/software/bin/seawat_svn387" "/home/ariel2/Projects/optimal_mod_runs/sm_7/sm_7.nam_swt"
