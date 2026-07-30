@@ -1,0 +1,278 @@
+Facies:
+  clay:
+    ID: 3
+    color: brown
+  sand:
+    ID: 1
+    color: yellow
+  silt:
+    ID: 2
+    color: darkorange
+Pile_master: Strat
+Piles:
+  Strat:
+    list_units:
+    - shelf_lyr
+    name: Strat
+    seed: 1
+    verbose: 1
+  sequence_strat:
+    list_units:
+    - ob1
+    - aq1
+    - sed_col
+    name: sequence_strat
+    seed: 1
+    verbose: 1
+Results:
+  facies: sm_5.fac
+  properties: sm_5.pro
+  surfaces: sm_5.sf
+  surfaces_bot: sm_5.sfb
+  units: sm_5.unt
+Units:
+  aq1:
+    ID: 2
+    color: yellow
+    dic_facies:
+      f_covmodel: null
+      f_method: homogenous
+    list_facies:
+    - sand
+    name: aq1
+    order: 2
+    surface:
+      contact: erode
+      dic_surf:
+        N_transfo: false
+        bandwidth_mult: 1
+        covmodel:
+          alpha: -0.05
+          elem:
+          - !!python/tuple
+            - spherical
+            - r:
+              - 20000.0
+              - 100.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
+        int_method: grf_ineq
+        tau: 0
+      name: top_aq1
+  ob1:
+    ID: 1
+    color: brown
+    dic_facies:
+      f_covmodel: null
+      f_method: homogenous
+    list_facies:
+    - clay
+    name: ob1
+    order: 1
+    surface:
+      contact: erode
+      dic_surf:
+        N_transfo: false
+        bandwidth_mult: 1
+        covmodel:
+          alpha: -0.05
+          elem:
+          - !!python/tuple
+            - spherical
+            - r:
+              - 20000.0
+              - 100.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
+        int_method: grf_ineq
+        tau: 0
+      name: top_mod
+  sed_col:
+    ID: 3
+    color: darkorange
+    dic_facies:
+      f_covmodel: null
+      f_method: homogenous
+    list_facies:
+    - silt
+    name: sed_col
+    order: 3
+    surface:
+      contact: erode
+      dic_surf:
+        N_transfo: false
+        bandwidth_mult: 1
+        covmodel:
+          alpha: -0.05
+          elem:
+          - !!python/tuple
+            - spherical
+            - r:
+              - 20000.0
+              - 100.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
+        int_method: grf_ineq
+        tau: 0
+      name: bot_aq1
+  shelf_lyr:
+    ID: 4
+    color: brown
+    dic_facies:
+      SubPile: sequence_strat
+      f_method: SubPile
+    list_facies:
+    - sand
+    - silt
+    - clay
+    name: shelf_lyr
+    order: 1
+    surface:
+      contact: erode
+      dic_surf:
+        N_transfo: false
+        bandwidth_mult: 1
+        covmodel:
+          alpha: -0.05
+          elem:
+          - !!python/tuple
+            - spherical
+            - r:
+              - 20000.0
+              - 100.0
+              w: 9.9
+          - !!python/tuple
+            - nugget
+            - w: 0.1
+        int_method: grf_ineq
+        tau: 0
+      name: top_mod
+boreholes:
+  facies_data: sm_5.fd
+  facies_fake_data: fake_sm_5.fd
+  list_bhs: sm_5.lbh
+  list_fake_bhs: fake_sm_5.lbh
+  units_data: sm_5.ud
+  units_fake_data: fake_sm_5.ud
+facies_computed: 1
+grid:
+  bot: sm_5.bot
+  dimensions: !!python/tuple
+  - 1788
+  - 1
+  - 246
+  mask: sm_5.msk
+  origin: !!python/tuple
+  - 0.0
+  - 0.0
+  - -2400.0
+  rotation_angle: 0
+  spacing: !!python/tuple
+  - 100.0
+  - 100.0
+  - 10.0
+  top: sm_5.top
+name: sm_5
+ncpu: -1
+nreal_fa: 1
+nreal_prop: 1
+nreal_units: 1
+prop_computed: 1
+properties:
+  K:
+    covmodels:
+    - alpha: 0
+      beta: 0
+      elem:
+      - !!python/tuple
+        - gaussian
+        - r:
+          - 59600.0
+          - 100.0
+          - 253.5
+          w: 9.7
+      - !!python/tuple
+        - nugget
+        - w: 0.3
+      gamma: !!python/object/apply:numpy.core.multiarray.scalar
+      - &id001 !!python/object/apply:numpy.dtype
+        args:
+        - f8
+        - false
+        - true
+        state: !!python/tuple
+        - 3
+        - <
+        - null
+        - null
+        - null
+        - -1
+        - -1
+        - 0
+      - !!binary |
+        mpmZmZmZqb8=
+    - null
+    - null
+    def_mean: 1
+    facies:
+    - sand
+    - silt
+    - clay
+    int_method:
+    - sgs
+    - homogenous
+    - homogenous
+    means:
+    - 4.0
+    - 1.0
+    - 0.1
+    name: K
+    vmax: 5
+    vmin: 0.1
+  Por:
+    covmodels:
+    - alpha: 0
+      beta: 0
+      elem:
+      - !!python/tuple
+        - gaussian
+        - r:
+          - 59600.0
+          - 100.0
+          - 253.5
+          w: 9.7
+      - !!python/tuple
+        - nugget
+        - w: 0.3
+      gamma: !!python/object/apply:numpy.core.multiarray.scalar
+      - *id001
+      - !!binary |
+        mpmZmZmZqb8=
+    - null
+    - null
+    def_mean: 1
+    facies:
+    - sand
+    - silt
+    - clay
+    int_method:
+    - sgs
+    - homogenous
+    - homogenous
+    means:
+    - 0.3
+    - 0.45
+    - 0.6
+    name: Por
+    vmax: 0.65
+    vmin: 0.2
+seed: 777000000
+surfaces_computed: 1
+verbose: 1
+ws: /home/ariel2/Projects/optimal/surrogate_sections/ArchPy_mods/ap_sm_5
