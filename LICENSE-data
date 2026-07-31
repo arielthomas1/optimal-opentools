@@ -1,0 +1,19 @@
+Data license: Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+The datasets in this repository (including the surrogate-model parameter tables,
+the machine-learning training and test data, and any derived data products) are
+licensed under the Creative Commons Attribution 4.0 International License.
+
+You are free to share and adapt these data for any purpose, provided you give
+appropriate credit, indicate if changes were made, and do not imply endorsement.
+
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+Summary: https://creativecommons.org/licenses/by/4.0/
+
+Suggested attribution:
+Thomas, A. T. and the University of Malta (2026). OPTIMAL: Offshore Freshened
+Groundwater Prospecting using Machine Learning. Produced under the Marie
+Skłodowska-Curie Postdoctoral Fellowship, Grant Agreement No. 101162644.
+
+Note: The code in this repository is licensed separately under the MIT License
+(see the LICENSE file).
