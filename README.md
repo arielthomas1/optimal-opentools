@@ -190,7 +190,7 @@ validated models is planned. Code and data will be updated as the work progresse
 - Machine learning results paper, planned for the *Frontiers* topical collection "Advances
   in Machine Learning and AI Applications for Coastal and Offshore Environments" (2026).
 
-*(Placeholder: add full citations and DOIs once available.)*
+£TODO: add full citations and DOIs once available.
 
 ---
 
