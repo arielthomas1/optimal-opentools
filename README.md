@@ -196,6 +196,7 @@ validated models is planned. Code and data will be updated as the work progresse
 
 ## License
 
+The **code** in this repository is licensed under the [MIT License](LICENSE). The **data** (surrogate-model parameter tables, machine-learning training and test datasets, and derived data products) are licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE-data). If you use this code or data, please cite the repository and the related publications (see [How to cite](#how-to-cite)).
 
 
 ---
